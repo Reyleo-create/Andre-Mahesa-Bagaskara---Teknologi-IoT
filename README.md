@@ -62,7 +62,7 @@ RustHome/
 
 ---
 
-## 🧩 Langkah Instalasi dan Pengujian
+## 🧩 Langkah-Langkah Percobaan
 
 1. 💻 Kloning repositori GitHub:
 
