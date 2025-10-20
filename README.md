@@ -64,33 +64,226 @@ RustHome/
 
 ## 🧩 Langkah-Langkah Percobaan
 
-1. 💻 Kloning repositori GitHub:
+### 1️⃣ Update sistem dan instal paket dasar
 
-   ```
-   git clone https://github.com/Reyleo-create/RustHome-IoT.git
-   cd RustHome-IoT
-   ```
+```bash
+sudo apt update
+sudo apt install build-essential dkms git python3 python3-pip curl pkg-config libudev-dev
+```
 
-2. 📶 Konfigurasi SSID dan kata sandi Wi-Fi di file wifi.rs.
+> Memastikan semua dependensi sistem siap untuk Rust + ESP-IDF.
 
-3. 🔑 Masukkan access token ThingsBoard di file mqtt.rs.
+---
 
-4. ⚙️ Kompilasi program dengan perintah:
+### 2️⃣ (Opsional) Instal driver WiFi Realtek RTL8821CE
 
-   ```
-   cargo build --release
-   ```
+Jika WiFi laptop tidak berfungsi di Linux:
 
-5. 🔌 Flash firmware ke ESP32-S3:
+```bash
+git clone https://github.com/tomaspinho/rtl8821ce
+cd rtl8821ce
+sudo ./dkms-install.sh
+```
 
-   ```
-   cargo espflash /dev/ttyUSB0
-   ```
+> Setelah selesai, restart laptop dan pastikan koneksi WiFi aktif.
 
-6. 📊 Jalankan ThingsBoard Cloud dan amati data telemetry di dashboard.
+---
 
-7. 🔄 Lakukan OTA update dengan mengirim perintah RPC berisi URL firmware baru dari ThingsBoard.
+### 3️⃣ Instal Rust dan toolchain ESP32-S3
 
+```bash
+curl https://sh.rustup.rs -sSf | sh
+source $HOME/.cargo/env
+rustup target add xtensa-esp32s3-espidf
+cargo install ldproxy
+cargo install espup
+espup install
+source ~/export-esp.sh
+```
+
+> File `export-esp.sh` akan otomatis dibuat oleh `espup` dan berisi setup environment untuk ESP32-S3.
+
+---
+
+### 4️⃣ Setup ESP-IDF (library C untuk Rust ESP)
+
+```bash
+cd ~
+git clone --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf
+./install.sh esp32s3
+. ./export.sh
+```
+
+---
+
+## 💻 Setup dan Build Project RustHome-IoT
+
+### 5️⃣ Kloning repositori GitHub
+
+```bash
+git clone https://github.com/Reyleo-create/RustHome-IoT.git
+cd RustHome-IoT
+```
+
+---
+
+### 6️⃣ Konfigurasi jaringan dan token
+
+Edit file berikut:
+
+* **`wifi.rs`** → isi SSID dan password Wi-Fi kamu
+* **`mqtt.rs`** → masukkan access token dari ThingsBoard Cloud
+
+---
+
+### 7️⃣ (Opsional) Edit tabel partisi untuk OTA
+
+```bash
+nano partition_table.csv
+```
+
+Contoh isi:
+
+```
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x5000,
+otadata,  data, ota,     0xe000,  0x2000,
+phy_init, data, phy,     0x10000, 0x1000,
+factory,  app,  factory, 0x20000, 1M,
+ota_0,    app,  ota_0,   ,        1M,
+ota_1,    app,  ota_1,   ,        1M,
+storage,  data, spiffs,  ,        1M,
+```
+
+---
+
+### 8️⃣ Kompilasi program Rust untuk ESP32-S3
+
+```bash
+cargo build --release
+```
+
+> Hasil build akan muncul di `target/xtensa-esp32s3-espidf/release/dev`.
+
+---
+
+### 9️⃣ Flash firmware ke board ESP32-S3
+
+```bash
+espflash flash --partition-table partition_table.csv target/xtensa-esp32s3-espidf/debug/dev --monitor --port /dev/ttyACM0
+```
+
+> Sesuaikan port dengan hasil `ls /dev/tty*` (mis. `/dev/ttyUSB0`).
+
+Atau jika menggunakan perintah singkat:
+
+```bash
+cargo espflash /dev/ttyUSB0
+```
+
+---
+
+### 🔟 Simpan image firmware untuk OTA
+
+```bash
+espflash save-image --chip esp32s3 target/xtensa-esp32s3-espidf/release/dev dev.bin
+```
+
+---
+
+### 1️⃣1️⃣ Jalankan server HTTP lokal untuk OTA update
+
+```bash
+python3 -m http.server
+```
+
+Cek alamat IP dengan:
+
+```bash
+ifconfig
+```
+
+Akses file OTA melalui:
+
+```
+http://<IP_KOMPUTER>:8000/dev.bin
+```
+
+---
+
+### 1️⃣2️⃣ Integrasi MQTT ke ThingsBoard Cloud
+
+Konfigurasi di kode Rust (contoh):
+
+```rust
+let mqtt_url = "mqtt://mqtt.thingsboard.cloud";
+let access_token = "TOKEN_DEVICE_KAMU";
+let payload = format!("{{\"temperature\": {:.2}, \"humidity\": {:.2}}}", temp, hum);
+mqtt_client.publish("v1/devices/me/telemetry", QoS::AtMostOnce, false, payload.as_bytes())?;
+```
+
+> Gunakan crate `esp-idf-svc` untuk MQTT dan `esp-idf-hal` untuk akses sensor DHT22.
+
+---
+
+### 1️⃣3️⃣ Jalankan ThingsBoard Cloud
+
+Masuk ke akun [ThingsBoard Cloud](https://thingsboard.cloud), buka **Dashboard**, dan pantau telemetry:
+
+* 🌡️ Temperature
+* 💧 Humidity
+* 📶 Device Status
+
+Data akan muncul secara **real-time** sesuai interval pembacaan di firmware.
+
+---
+
+### 1️⃣4️⃣ Lakukan OTA update dari ThingsBoard
+
+Kirim perintah **RPC (Remote Procedure Call)** dari ThingsBoard ke device dengan payload:
+
+```json
+{
+  "method": "ota_update",
+  "params": {
+    "url": "http://<IP_KOMPUTER>:8000/dev.bin"
+  }
+}
+```
+
+ESP32-S3 akan mengunduh dan menulis firmware baru, lalu otomatis reboot ke versi terbaru.
+
+---
+
+## ✅ RANGKUMAN LANGKAH-LANGKAH PERCOBAAN
+
+```bash
+sudo apt update
+sudo apt install build-essential dkms git python3 python3-pip curl pkg-config libudev-dev
+git clone https://github.com/tomaspinho/rtl8821ce
+cd rtl8821ce
+sudo ./dkms-install.sh
+curl https://sh.rustup.rs -sSf | sh
+source $HOME/.cargo/env
+rustup target add xtensa-esp32s3-espidf
+cargo install ldproxy
+cargo install espup
+espup install
+source ~/export-esp.sh
+git clone --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf
+./install.sh esp32s3
+. ./export.sh
+git clone https://github.com/Reyleo-create/RustHome-IoT.git
+cd RustHome-IoT
+cargo build --release
+nano partition_table.csv
+espflash flash --partition-table partition_table.csv target/xtensa-esp32s3-espidf/debug/dev --monitor --port /dev/ttyACM0
+espflash save-image --chip esp32s3 target/xtensa-esp32s3-espidf/release/dev dev.bin
+python3 -m http.server
+ifconfig
+```
 ---
 
 ## 📊 Hasil dan Visualisasi
@@ -105,7 +298,37 @@ Hasil pengujian menunjukkan bahwa RustHome mampu mengirim data suhu dan kelembap
 Data diekspor ke format CSV dan dianalisis menggunakan Gnuplot. Hasil plot menunjukkan tren yang stabil dan linear antara waktu dan nilai pengukuran. Nilai latensi yang rendah membuktikan efisiensi komunikasi MQTT, sementara sensor DHT22 menunjukkan keakuratan dan konsistensi yang baik selama pengambilan data.
 
 ---
+## 📉 Diagram Sistem
 
+📶 **Alur lengkap sistem:**
+**ESP32-S3 + DHT22 → Device IoT → MQTT Protocol → ThingsBoard Cloud → OTA → kembali ke ESP32-S3**
+
+Berikut langkah-langkah (step) dari diagram sistem tersebut beserta penjelasan singkat tiap poinnya:
+
+1. **ESP32-S3**
+   Perangkat mikrokontroler utama yang menjalankan program berbasis *Rust Embedded* secara *bare metal*, artinya sistem bekerja langsung tanpa sistem operasi tambahan.
+
+2. **Device IoT**
+   Modul inti yang berisi komponen:
+
+   * **Controllers**: mengatur alur logika dan pengendalian perangkat.
+   * **Sensors**: membaca parameter lingkungan (misal suhu, kelembapan, cahaya).
+   * **Actuators**: mengeksekusi aksi seperti menyalakan kipas atau lampu.
+   * **Connectivity**: menghubungkan perangkat ke jaringan IoT melalui Wi-Fi atau protokol lainnya.
+
+3. **MQTT Standard Protocol IoT**
+   Protokol komunikasi ringan yang digunakan untuk mengirim data sensor dari ESP32-S3 ke server *ThingsBoard Cloud* secara efisien dan real-time.
+
+4. **ThingsBoard Cloud**
+   Platform cloud untuk menampilkan data IoT, memantau perangkat, serta mengelola konfigurasi sistem secara visual dan terpusat.
+
+5. **OTA (Over The Air Update)**
+   Fitur pembaruan firmware secara jarak jauh tanpa kabel. ThingsBoard mengirimkan pembaruan ke ESP32-S3 melalui MQTT, memastikan sistem tetap up-to-date.
+
+Alur utama sistem:
+**ESP32-S3 (Rust)** membaca data sensor → mengirim ke **ThingsBoard Cloud** melalui **MQTT** → data divisualisasikan → pembaruan firmware dilakukan lewat **OTA** kembali ke perangkat.
+
+---
 ## 🔒 Keamanan dan Reliabilitas
 
 RustHome memanfaatkan sistem kepemilikan (ownership) Rust untuk menghindari kesalahan memori seperti buffer overflow dan data race. Mekanisme OTA dilengkapi validasi checksum dan rollback otomatis jika pembaruan gagal.
@@ -116,9 +339,40 @@ ESP32-S3 mendukung fitur Secure Boot dan Flash Encryption untuk melindungi integ
 
 ## 📈 Analisis Hasil
 
-Pengujian menunjukkan RustHome memiliki performa tinggi dan efisiensi komunikasi yang baik. Latensi di bawah 200 ms memenuhi kebutuhan aplikasi IoT real-time, sementara konsumsi memori berkurang hingga 20% dibandingkan sistem berbasis C. OTA update bekerja tanpa kesalahan dan sistem tetap stabil selama pengujian berjam-jam.
+Berikut **penjelasan hasil sistem IoT berbasis ESP32-S3 dengan Rust dan ThingsBoard Cloud** 👇
 
-Proyek ini dapat dikembangkan lebih lanjut untuk mendukung sinkronisasi multi-perangkat (multi-node) agar beberapa perangkat RustHome dapat saling berkomunikasi melalui MQTT dalam arsitektur rumah pintar terdistribusi.
+---
+
+### ⚙️ **Penjelasan Hasil Sistem**
+
+1. **ESP32-S3 berhasil menjalankan program Rust bare-metal**
+   → Menunjukkan bahwa integrasi Rust dengan ekosistem ESP-IDF berjalan stabil, tanpa perlu sistem operasi tambahan.
+
+2. **Sensor DHT22 berfungsi dengan baik**
+   → Data suhu dan kelembapan dapat dibaca secara periodik dan dikirim ke sistem dengan tingkat akurasi yang konsisten.
+
+3. **Proses pengiriman data menggunakan protokol MQTT berhasil**
+   → Data telemetry dari ESP32-S3 terkirim ke ThingsBoard Cloud secara real-time, membuktikan koneksi dan konfigurasi jaringan stabil.
+
+4. **Dashboard ThingsBoard menampilkan data secara dinamis**
+   → Nilai suhu dan kelembapan muncul dalam bentuk grafik dan indikator, sehingga mudah dipantau oleh pengguna.
+
+5. **Fitur OTA (Over-The-Air) berjalan sesuai harapan**
+   → ESP32-S3 dapat menerima file firmware (`dev.bin`) dari server HTTP dan melakukan pembaruan otomatis tanpa koneksi kabel.
+
+6. **Sistem menunjukkan keandalan konektivitas Wi-Fi**
+   → Tidak ada gangguan berarti saat pengiriman data MQTT maupun saat proses OTA berlangsung.
+
+7. **Kinerja Rust dalam pengelolaan sumber daya efisien**
+   → Konsumsi memori rendah dan waktu respon cepat, cocok untuk aplikasi IoT dengan kebutuhan real-time.
+
+8. **Integrasi end-to-end berhasil**
+   → Dari pembacaan sensor, pengiriman data, visualisasi cloud, hingga pembaruan firmware berjalan lancar sebagai satu ekosistem utuh.
+
+---
+
+📊 **Kesimpulan:**
+Sistem IoT berbasis **ESP32-S3 dengan Rust dan ThingsBoard Cloud** terbukti mampu melakukan **monitoring suhu & kelembapan secara real-time**, serta mendukung **pembaruan firmware OTA** dengan koneksi **Wi-Fi stabil dan protokol MQTT** yang efisien.
 
 ---
 
