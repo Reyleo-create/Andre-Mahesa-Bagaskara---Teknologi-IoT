@@ -134,11 +134,11 @@ Proyek ini dapat dikembangkan lebih lanjut untuk mendukung sinkronisasi multi-pe
 
 ## 👨‍💻 Pembuat
 
+Kelas 5B Kelompok 12
 1. Muhammad Jidan Baraja NRP 2042231009
 2. Andre Mahesa Bagaskara NRP 2042231012
 
 Kontak:
-🌐 GitHub: [https://github.com/Reyleo-create](https://github.com/Reyleo-create)
 📧 Email: 2042231012@student.its.ac.id
 
 ---
