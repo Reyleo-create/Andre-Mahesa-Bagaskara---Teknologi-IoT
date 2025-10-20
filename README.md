@@ -2,11 +2,13 @@
 
 RustHome merupakan proyek Internet of Things (IoT) berbasis mikrokontroler ESP32-S3 yang diprogram menggunakan bahasa Rust. Sistem ini dirancang untuk memantau suhu dan kelembapan rumah secara real-time melalui koneksi internet dengan dukungan ThingsBoard Cloud menggunakan protokol MQTT. Selain itu, RustHome juga memiliki fitur Over-The-Air (OTA) update yang memungkinkan pembaruan firmware dilakukan dari jarak jauh secara aman dan efisien tanpa intervensi manual pada perangkat.
 
+
 🧾 Deskripsi Proyek
 
 RustHome dikembangkan untuk mengeksplorasi kemampuan bahasa Rust dalam sistem tertanam yang membutuhkan keamanan memori, efisiensi tinggi, dan kestabilan jangka panjang. Sensor DHT22 digunakan untuk mengukur suhu dan kelembapan, sementara data dikirimkan secara periodik ke ThingsBoard Cloud untuk disimpan dan divisualisasikan dalam bentuk grafik time-series dan tabel data.
 
 Melalui fitur OTA, RustHome dapat memperbarui firmware secara otomatis tanpa perlu flashing langsung ke perangkat. Hal ini sangat penting untuk sistem IoT berskala besar yang tersebar di banyak lokasi dan membutuhkan pembaruan perangkat lunak secara efisien.
+
 
 ⚙️ Spesifikasi Teknis
 
@@ -24,6 +26,7 @@ Melalui fitur OTA, RustHome dapat memperbarui firmware secara otomatis tanpa per
 
 🔁 Fitur Tambahan: OTA Update, JSON Telemetry, Non-blocking Async Runtime, Auto-Reconnect Wi-Fi
 
+
 🧠 Arsitektur Sistem
 
 RustHome terdiri dari empat komponen utama yang saling terhubung:
@@ -35,6 +38,7 @@ RustHome terdiri dari empat komponen utama yang saling terhubung:
 ☁️ ThingsBoard Cloud sebagai platform penyimpanan dan visualisasi data.
 
 🔄 Mekanisme OTA yang memungkinkan pembaruan firmware otomatis.
+
 
 Alur sistem:
 
@@ -48,6 +52,7 @@ Ketika firmware baru tersedia, ThingsBoard mengirim perintah OTA melalui RPC ke 
 
 ESP32-S3 mengunduh firmware dari URL yang diberikan, memverifikasi checksum, dan melakukan reboot setelah pembaruan berhasil.
 
+
 📁 Struktur Direktori Proyek
 RustHome/
 │
@@ -60,6 +65,7 @@ RustHome/
 │
 ├── Cargo.toml          // Konfigurasi dependensi proyek Rust
 └── README.md           // Dokumentasi proyek
+
 
 🧩 Langkah Instalasi dan Pengujian
 
@@ -87,17 +93,20 @@ cargo espflash /dev/ttyUSB0
 
 🔄 Untuk OTA update, kirimkan perintah RPC dengan URL firmware baru melalui ThingsBoard.
 
+
 📊 Hasil dan Visualisasi
 
 Data hasil pembacaan sensor DHT22 dikirim ke ThingsBoard Cloud dan divisualisasikan dalam dua grafik utama: suhu dan kelembapan terhadap waktu. Selama pengujian enam jam, suhu tercatat stabil pada rentang 27,8°C hingga 29,1°C, sedangkan kelembapan berkisar antara 61% hingga 66%. Tidak ada kehilangan data selama proses transmisi MQTT, menandakan koneksi yang andal dan stabil.
 
 Data telemetry kemudian diekspor ke format CSV untuk dianalisis menggunakan Gnuplot. Hasil plot menunjukkan hubungan linier antara waktu dan nilai suhu maupun kelembapan. Nilai latensi rata-rata sebesar 0,187 detik dengan deviasi standar 0,035 detik menunjukkan bahwa sistem RustHome memiliki performa komunikasi yang cepat dan konsisten.
 
+
 🔒 Keamanan dan Reliabilitas
 
 RustHome memanfaatkan keunggulan bahasa Rust yang secara alami mencegah kesalahan memori seperti buffer overflow dan data race. Setiap pembaruan OTA dilengkapi dengan verifikasi checksum untuk memastikan integritas firmware sebelum dijalankan.
 
 ESP32-S3 mendukung fitur Secure Boot dan Flash Encryption untuk meningkatkan keamanan sistem. Koneksi MQTT dikonfigurasi dengan parameter keep-alive untuk menjaga kestabilan sambungan. Jika koneksi terputus, sistem secara otomatis mencoba menyambung kembali tanpa mengganggu proses utama. Dengan mekanisme QoS 1 dan QoS 2, data telemetry dan OTA dapat dikirim tanpa kehilangan meskipun jaringan tidak stabil.
+
 
 📈 Analisis Hasil
 
