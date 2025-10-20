@@ -2,7 +2,6 @@
 
 RustHome merupakan proyek Internet of Things (IoT) berbasis mikrokontroler ESP32-S3 yang diprogram menggunakan bahasa Rust. Sistem ini dirancang untuk memantau suhu dan kelembapan rumah secara real-time melalui koneksi internet dengan dukungan ThingsBoard Cloud menggunakan protokol MQTT. Selain itu, RustHome juga memiliki fitur Over-The-Air (OTA) update yang memungkinkan pembaruan firmware dilakukan dari jarak jauh secara aman dan efisien tanpa intervensi manual pada perangkat.
 
-
 🧾 Deskripsi Proyek
 
 RustHome dikembangkan untuk mengeksplorasi kemampuan bahasa Rust dalam sistem tertanam yang membutuhkan keamanan memori, efisiensi tinggi, dan kestabilan jangka panjang. Sensor DHT22 digunakan untuk mengukur suhu dan kelembapan, sementara data dikirimkan secara periodik ke ThingsBoard Cloud untuk disimpan dan divisualisasikan dalam bentuk grafik time-series dan tabel data.
