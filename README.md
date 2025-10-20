@@ -139,7 +139,7 @@ Proyek ini dapat dikembangkan lebih lanjut untuk mendukung sinkronisasi multi-pe
 
 Kontak:
 🌐 GitHub: [https://github.com/Reyleo-create](https://github.com/Reyleo-create)
-📧 Email: (isi sesuai kebutuhan Anda)
+📧 Email: 2042231012@student.its.ac.id
 
 ---
 
