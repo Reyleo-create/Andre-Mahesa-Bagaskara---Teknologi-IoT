@@ -180,7 +180,7 @@ mqtt_client.publish("v1/devices/me/telemetry", QoS::AtMostOnce, false, payload.a
 
 ---
 
-✅ URUTAN FINAL KOMANDO LENGKAP
+✅ URUTAN LENGKAP PROSEDUR
 
 Berikut versi lengkap dan berurutan dari semua langkah di atas:
 
