@@ -1,0 +1,214 @@
+🌐[Prosedur Project Teknologi IoT]🌐
+Noted: jika terdapat error dapat dilakukan perbaikan atau analisa ulang sampai selesai.
+---
+
+🧰 1️⃣ Update sistem dan instal paket dasar
+
+```bash
+sudo apt update
+sudo apt install build-essential dkms git python3 python3-pip curl pkg-config libudev-dev
+```
+
+> Ini memastikan semua alat build dan dependensi sistem sudah lengkap untuk Rust + ESP-IDF.
+
+---
+
+📡 2️⃣ (Opsional) Instal driver WiFi Realtek (RTL8821CE)
+
+Jika WiFi laptop kamu belum berfungsi di Linux:
+
+```bash
+git clone https://github.com/tomaspinho/rtl8821ce
+cd rtl8821ce
+sudo ./dkms-install.sh
+```
+
+> Setelah selesai, restart laptop dan pastikan WiFi berfungsi.
+
+---
+
+🦀 3️⃣ Instal Rust dan toolchain ESP32-S3
+
+Unduh dan instal Rust toolchain stabil:
+
+```bash
+curl https://sh.rustup.rs -sSf | sh
+source $HOME/.cargo/env
+```
+
+Tambahkan toolchain Xtensa untuk ESP32-S3:
+
+```bash
+rustup target add xtensa-esp32s3-espidf
+cargo install ldproxy
+```
+
+Instal `espup` (pengelola tool ESP untuk Rust):
+
+```bash
+cargo install espup
+espup install
+```
+
+Setelah selesai, jalankan:
+
+```bash
+source ~/export-esp.sh
+```
+
+> File `export-esp.sh` dibuat otomatis oleh `espup`, dan isinya men-setup semua environment ESP32-S3 untuk Rust.
+
+---
+
+🧱 4️⃣ Setup ESP-IDF
+
+Walau pakai Rust, kamu tetap perlu ESP-IDF karena Rust binding-nya bergantung pada library C dari ESP-IDF:
+
+```bash
+cd ~
+git clone --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf
+./install.sh esp32s3
+. ./export.sh
+```
+
+---
+
+🚀 5️⃣ Buat dan build proyek ESP32-S3 berbasis Rust
+
+Gunakan template resmi:
+
+```bash
+cargo install esp-idf-template
+cargo generate esp-rs/esp-idf-template
+```
+
+Lalu pilih target `esp32s3` saat ditanya.
+
+Masuk ke folder proyek hasil generate:
+
+```bash
+cd nama_proyek_kamu
+```
+
+Build:
+
+```bash
+cargo build --release
+```
+
+---
+
+⚙️ 6️⃣ Edit tabel partisi (opsional, untuk OTA dan storage tambahan)
+
+```bash
+nano partition_table.csv
+```
+
+Contoh isinya:
+
+```
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x5000,
+otadata,  data, ota,     0xe000,  0x2000,
+phy_init, data, phy,     0x10000, 0x1000,
+factory,  app,  factory, 0x20000, 1M,
+ota_0,    app,  ota_0,   ,        1M,
+ota_1,    app,  ota_1,   ,        1M,
+storage,  data, spiffs,  ,        1M,
+```
+
+---
+
+💾 7️⃣ Flash firmware ke ESP32-S3
+
+Colok board kamu, lalu jalankan:
+
+```bash
+espflash flash --partition-table partition_table.csv target/xtensa-esp32s3-espidf/debug/dev --monitor --port /dev/ttyACM0
+```
+
+> Ubah port sesuai dengan hasil `ls /dev/tty*` (biasanya `/dev/ttyACM0` atau `/dev/ttyUSB0`).
+
+---
+
+📸 8️⃣ Simpan image firmware untuk OTA
+
+```bash
+espflash save-image --chip esp32s3 target/xtensa-esp32s3-espidf/release/dev dev.bin
+```
+
+---
+
+🌐 9️⃣ Jalankan server HTTP lokal untuk OTA
+
+```bash
+python3 -m http.server
+```
+
+Lihat alamat IP lokal:
+
+```bash
+ifconfig
+```
+
+File `dev.bin` bisa diakses melalui browser/ESP32 pada:
+
+```
+http://<IP_KOMPUTER>:8000/dev.bin
+```
+
+---
+
+☁️ 🔟 Integrasi MQTT ke ThingsBoard Cloud
+
+Di kode Rust, konfigurasikan koneksi MQTT seperti ini:
+
+```rust
+let mqtt_url = "mqtt://mqtt.thingsboard.cloud";
+let access_token = "TOKEN_DEVICE_KAMU";
+```
+
+Payload data sensor (misalnya DHT22) bisa dikirim seperti:
+
+```rust
+let payload = format!("{{\"temperature\": {:.2}, \"humidity\": {:.2}}}", temp, hum);
+mqtt_client.publish("v1/devices/me/telemetry", QoS::AtMostOnce, false, payload.as_bytes())?;
+```
+
+> Gunakan crate `esp-idf-svc` untuk MQTT dan `esp-idf-hal` untuk GPIO/sensor.
+
+---
+
+✅ URUTAN FINAL KOMANDO LENGKAP
+
+Berikut versi lengkap dan berurutan dari semua langkah di atas:
+
+```bash
+sudo apt update
+sudo apt install build-essential dkms git python3 python3-pip curl pkg-config libudev-dev
+git clone https://github.com/tomaspinho/rtl8821ce
+cd rtl8821ce
+sudo ./dkms-install.sh
+curl https://sh.rustup.rs -sSf | sh
+source $HOME/.cargo/env
+rustup target add xtensa-esp32s3-espidf
+cargo install ldproxy
+cargo install espup
+espup install
+source ~/export-esp.sh
+git clone --recursive https://github.com/espressif/esp-idf.git
+cd esp-idf
+./install.sh esp32s3
+. ./export.sh
+cargo install esp-idf-template
+cargo generate esp-rs/esp-idf-template
+cd nama_proyek_kamu
+cargo build --release
+nano partition_table.csv
+espflash flash --partition-table partition_table.csv target/xtensa-esp32s3-espidf/debug/dev --monitor --port /dev/ttyACM0
+espflash save-image --chip esp32s3 target/xtensa-esp32s3-espidf/release/dev dev.bin
+python3 -m http.server
+ifconfig
+```
+
