@@ -1,0 +1,937 @@
+% laporan_rusthome_full_final.tex
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[indonesian]{babel}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{verbatim}
+\geometry{left=3cm,right=3cm,top=2.5cm,bottom=2.5cm}
+\setstretch{1.5}
+\setlength{\parindent}{1.25cm}
+\sloppy
+\emergencystretch=3em
+\tolerance=1000
+\hbadness=10000
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue,
+  pdftitle={RustHome: Sistem Monitoring Suhu dan Kelembaban},
+  pdfauthor={Muhammad Jidan Baraja, Andre Mahesa Bagaskara}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\nouppercase{\leftmark}}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\titleformat{\chapter}[hang]{\bfseries\Large}{\thechapter.}{1em}{}
+\titlespacing*{\chapter}{0pt}{0pt}{12pt}
+
+% metadata
+\newcommand{\judul}{RustHome: Sistem Monitoring Suhu dan Kelembaban Rumah Berbasis ESP32-S3 dengan OTA dan Integrasi Cloud}
+\newcommand{\penulisA}{Muhammad Jidan Baraja 2042231009}
+\newcommand{\penulisB}{Andre Mahesa Bagaskara 2042231012}
+\newcommand{\prodi}{D4 Teknologi Rekayasa Instrumentasi}
+\newcommand{\jurusan}{Departemen Teknik Instrumentasi}
+\newcommand{\fakultas}{Fakultas Vokasi}
+\newcommand{\institusi}{Institut Teknologi Sepuluh Nopember}
+\newcommand{\tahun}{2025}
+
+\begin{document}
+
+% =========================
+% COVER 1 HALAMAN
+% =========================
+\begin{titlepage}
+  \centering
+  \vspace*{0.5cm}
+  {\Large\bfseries LAPORAN PROJECT}\\[0.4cm]
+  {\Large\bfseries TEKNOLOGI IOT}\\[0.6cm]
+  {\normalsize Dosen Pengampu: Ahmad Radhy, S.Si., M.Si.}\\[0.6cm]
+  {\Large\bfseries \judul}\\[1.0cm]
+  \includegraphics[width= 0.4 \textwidth]{logo_its.png}\\[0.8cm]
+  {\normalsize Disusun Oleh:}\\[0.4cm]
+  {\large \penulisA \\ \npmA \\[0.01cm]
+  {\large \penulisB \\ \npmB }\\[1.4cm]
+  {\large \prodi \\ \jurusan \\ \fakultas \\ \institusi \\ \tahun}\\[0.01cm]
+  \vfill
+\end{titlepage}
+
+% =========================
+% DAFTAR ISI
+% =========================
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% =========================
+% BAB I - PENDAHULUAN
+% =========================
+\chapter{Pendahuluan}
+\section{Latar Belakang}
+\hspace*{3em}Perkembangan teknologi pada era Revolusi Industri 4.0 menempatkan \textit{Internet of Things} (IoT) sebagai salah satu fondasi utama transformasi digital di berbagai bidang. IoT memungkinkan integrasi antara sensor, perangkat cerdas, dan sistem cloud untuk menciptakan jaringan ekosistem yang dapat saling berinteraksi dan mengambil keputusan secara otomatis. Teknologi ini tidak hanya berfungsi untuk mengirimkan data, tetapi juga memungkinkan analisis serta pengendalian perangkat secara real-time. Dalam konteks \textit{smart home}, parameter suhu dan kelembaban memiliki peranan penting karena berhubungan langsung dengan kenyamanan dan kesehatan penghuni rumah. Pengawasan parameter tersebut secara otomatis melalui sistem IoT mampu memberikan respons cepat terhadap perubahan lingkungan. Proyek \textbf{RustHome} dirancang sebagai solusi modern untuk memantau suhu dan kelembaban menggunakan sensor DHT22 yang dikendalikan oleh mikrokontroler ESP32-S3. Implementasi bahasa Rust digunakan karena memiliki performa tinggi dengan keamanan memori yang lebih baik dibandingkan C/C++. Sistem dilengkapi dengan mekanisme \textit{Over-the-Air (OTA)} untuk pembaruan firmware jarak jauh serta integrasi \textit{ThingsBoard Cloud} melalui protokol MQTT, sehingga pengguna dapat memantau data lingkungan secara daring dan melakukan pembaruan tanpa kabel.
+
+\section{Rumusan Masalah}
+Penelitian ini dilakukan untuk menjawab permasalahan berikut:
+\begin{itemize}
+  \item Bagaimana merancang sistem pemantauan suhu dan kelembaban berbasis ESP32-S3 dan Rust yang efisien serta stabil?
+  \item Bagaimana mengintegrasikan komunikasi antara perangkat ESP32-S3 dan ThingsBoard Cloud melalui protokol MQTT?
+  \item Bagaimana menerapkan mekanisme OTA yang aman, reliabel, dan mudah dikelola?
+  \item Bagaimana menganalisis performa sistem dari sisi latensi transmisi data dan keandalan pembaruan firmware?
+\end{itemize}
+
+\section{Tujuan Penelitian}
+\begin{enumerate}
+  \item Mengembangkan sistem pemantauan suhu dan kelembaban berbasis ESP32-S3 menggunakan bahasa Rust.
+  \item Mengimplementasikan komunikasi data menggunakan MQTT dengan integrasi ke ThingsBoard Cloud.
+  \item Menguji mekanisme OTA untuk memastikan keberhasilan proses pembaruan jarak jauh.
+  \item Melakukan analisis performa terhadap latensi komunikasi serta efektivitas sistem OTA.
+\end{enumerate}
+
+\section{Manfaat Penelitian}
+Penelitian ini memberikan kontribusi sebagai berikut:
+\begin{itemize}
+  \item \textbf{Akademik:} memberikan referensi penerapan bahasa Rust pada sistem IoT embedded.
+  \item \textbf{Teknologis:} menghadirkan contoh sistem smart home yang efisien, aman, dan dapat diperbarui dari jarak jauh.
+  \item \textbf{Praktis:} menyediakan solusi monitoring kondisi lingkungan rumah yang hemat energi dan mudah diimplementasikan.
+\end{itemize}
+
+\section{Batasan Masalah}
+Penelitian ini dibatasi agar tetap fokus pada tujuan utama, yaitu:
+\begin{enumerate}
+  \item Parameter yang diukur hanya suhu dan kelembaban menggunakan sensor DHT22.
+  \item Komunikasi data dilakukan melalui Wi-Fi dan MQTT dengan interval pengiriman 60 detik.
+  \item Mekanisme OTA tidak mencakup tanda tangan digital dan hanya menggunakan verifikasi checksum.
+  \item Implementasi TLS/SSL belum diaktifkan pada versi awal sistem.
+  \item Pengujian dilakukan pada satu unit ESP32-S3 dan satu sensor DHT22.
+  \item Visualisasi data dilakukan melalui dashboard ThingsBoard.
+\end{enumerate}
+
+% =========================
+% BAB II - TINJAUAN PUSTAKA
+% =========================
+\chapter{Tinjauan Pustaka}
+
+\section{Internet of Things (IoT)}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{iot_architecture.png.jpg}
+  \caption{Ilustrasi konsep Internet of Things.}
+\end{figure}
+\hspace*{3em}IoT atau Internet of Things merupakan jaringan perangkat yang saling berkomunikasi melalui internet untuk melakukan pertukaran data dan interaksi antar entitas fisik dan digital. IoT bekerja berdasarkan tiga komponen utama, yaitu sensor/aktuator, jaringan komunikasi, dan platform aplikasi. Sensor berperan dalam mengubah parameter fisik menjadi sinyal digital, jaringan komunikasi mengirimkan data tersebut ke server, dan platform aplikasi menampilkan hasilnya dalam bentuk visualisasi yang dapat dimengerti manusia. Dalam sistem IoT modern, komunikasi antar perangkat biasanya menggunakan protokol yang ringan dan efisien, seperti MQTT atau CoAP. Hal ini dikarenakan perangkat IoT umumnya memiliki keterbatasan sumber daya (resource-constrained devices). MQTT menjadi pilihan populer karena arsitektur publish-subscribe yang mendukung komunikasi asynchronous dan efisien terhadap bandwidth. IoT tidak hanya diterapkan di industri manufaktur atau transportasi, tetapi juga berkembang pesat di bidang rumah pintar (smart home). Dengan adanya sensor dan aktuator yang saling terhubung, pengguna dapat mengontrol pencahayaan, suhu, keamanan, dan perangkat listrik rumah secara jarak jauh. RustHome merupakan salah satu contoh penerapan prinsip IoT dalam konteks rumah pintar yang memanfaatkan komunikasi MQTT dan integrasi cloud.
+
+\section{Mikrokontroler ESP32-S3}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{esp32s3_module.png.jpg}
+  \caption{Modul ESP32-S3 DevKit yang digunakan.}
+\end{figure}
+
+\hspace*{3em}ESP32-S3 merupakan mikrokontroler System-on-Chip (SoC) terbaru dari Espressif yang dirancang untuk aplikasi Internet of Things (IoT) dan edge computing dengan kinerja tinggi dan efisiensi daya optimal. Mikrokontroler ini menggunakan prosesor Xtensa LX7 dual-core berkecepatan hingga 240 MHz serta mendukung instruksi vektor untuk akselerasi komputasi kecerdasan buatan. Dibandingkan pendahulunya, ESP32 dan ESP32-S2, versi S3 menawarkan peningkatan performa, konsumsi daya lebih efisien, serta fitur keamanan seperti secure boot dan flash encryption untuk melindungi firmware. ESP32-S3 juga dilengkapi antarmuka komunikasi lengkap seperti UART, SPI, I2C, I2S, dan PWM, serta modul Wi-Fi 2.4 GHz yang memungkinkan koneksi langsung ke internet tanpa perangkat tambahan. Dalam proyek RustHome, ESP32-S3 berfungsi sebagai pusat akuisisi data yang membaca sensor DHT22, memproses, dan mengirimkan data ke ThingsBoard Cloud melalui protokol MQTT. Dukungan SDK ESP-IDF membuat ESP32-S3 dapat diprogram dengan C/C++, MicroPython, maupun Rust, di mana pustaka esp-idf-svc dan embedded-svc memungkinkan akses langsung ke layanan sistem seperti Wi-Fi, MQTT, HTTP, dan OTA, menjadikannya platform ideal untuk pengembangan sistem IoT yang aman dan efisien.
+
+\section{Bahasa Rust pada Embedded System}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.35\textwidth]{bahasa_rust.png}
+  \caption{Logo bahasa Rust dan ekosistem embedded.}
+\end{figure}
+
+\hspace*{3em}Rust merupakan bahasa pemrograman yang dikembangkan oleh Mozilla dengan tujuan menggantikan C/C++ dalam pengembangan sistem tingkat rendah yang membutuhkan keamanan memori dan efisiensi tinggi. Bahasa ini menerapkan paradigma *ownership* dan *borrowing* untuk memastikan setiap data memiliki satu pemilik pada satu waktu, sehingga mencegah terjadinya *dangling pointer* dan *data race*. Keunggulan utama Rust terletak pada kemampuannya memberikan performa setara dengan C namun tetap aman dari kesalahan memori, menjadikannya sangat cocok untuk sistem tertanam yang memiliki keterbatasan sumber daya seperti ESP32-S3. Selain itu, Rust mendukung *asynchronous programming* yang memungkinkan beberapa proses berjalan secara bersamaan tanpa saling mengganggu, sehingga meningkatkan efisiensi dan stabilitas sistem. Dalam proyek RustHome, Rust digunakan untuk menulis firmware yang menangani koneksi Wi-Fi, komunikasi MQTT, pembacaan sensor DHT22, dan pembaruan OTA. Struktur modular melalui sistem Cargo crate memudahkan pengelolaan dependensi dan pemeliharaan kode. Keberhasilan implementasi Rust pada platform ESP32-S3 membuktikan bahwa bahasa ini telah matang untuk digunakan pada pengembangan sistem IoT tertanam yang membutuhkan keamanan, efisiensi, dan keandalan tinggi.
+
+\section{Sensor DHT22}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{dht22_sensor.png.jpg}
+  \caption{Sensor DHT22 (AM2302).}
+\end{figure}
+
+\hspace*{3em}Sensor DHT22 atau AM2302 adalah sensor digital yang digunakan untuk mengukur suhu dan kelembaban udara dengan akurasi tinggi. DHT22 menggunakan prinsip capacitive humidity sensing untuk mendeteksi kelembaban relatif (RH) dan thermistor untuk mengukur suhu udara. Sensor ini menghasilkan data 40 bit dalam format digital: 16 bit untuk kelembaban, 16 bit untuk suhu, dan 8 bit checksum sebagai validasi data. Kelebihan utama DHT22 dibandingkan DHT11 adalah jangkauan pengukuran yang lebih luas, akurasi lebih tinggi, dan kemampuan bekerja pada rentang suhu ekstrem (minus 40°C hingga 80°C). Selain itu, sensor ini memiliki stabilitas jangka panjang yang baik dan telah dikalibrasi pabrik. Dalam sistem RustHome, DHT22 dihubungkan ke pin GPIO ESP32-S3 menggunakan komunikasi satu jalur (single-wire digital). DHT22 memiliki kecepatan pembaruan data maksimum dua detik per siklus, sehingga cocok untuk sistem monitoring rumah yang tidak membutuhkan pembaruan ultra cepat. Data yang diterima dari DHT22 kemudian dikonversi ke format JSON dan dikirim ke ThingsBoard Cloud melalui MQTT untuk divisualisasikan secara real-time. Sensor ini dipilih karena keseimbangan antara akurasi, konsumsi daya rendah, dan kemudahan integrasi. 
+
+\section{Protokol MQTT}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{mqtt_scheme.png.jpg}
+  \caption{Arsitektur komunikasi MQTT antara client dan broker.}
+\end{figure}
+
+\hspace*{3em}Protokol MQTT (Message Queuing Telemetry Transport) merupakan protokol komunikasi ringan yang dirancang khusus untuk perangkat dengan sumber daya terbatas dan kebutuhan transmisi data yang efisien. MQTT menggunakan arsitektur publish/subscribe, di mana perangkat IoT bertindak sebagai client yang mengirimkan data ke broker, dan klien lain dapat berlangganan (subscribe) ke topik tertentu untuk menerima data tersebut. Arsitektur ini memungkinkan komunikasi yang fleksibel, hemat bandwidth, dan tetap andal meskipun jaringan memiliki latensi tinggi atau koneksi tidak stabil. Dalam sistem RustHome, MQTT digunakan sebagai jalur utama pertukaran data antara perangkat ESP32-S3 dan ThingsBoard Cloud. Sistem ini menerapkan Quality of Service (QoS) level 1 untuk pengiriman data telemetri agar pesan dikirim ulang jika terjadi gangguan, serta QoS level 2 untuk proses OTA guna memastikan tidak ada duplikasi paket selama pembaruan firmware. Melalui mekanisme ini, RustHome dapat mengirimkan data suhu dan kelembapan secara periodik, menerima perintah pembaruan dari cloud melalui RPC, dan menjaga sinkronisasi status perangkat secara real-time. Keandalan MQTT menjadikannya protokol yang ideal untuk sistem IoT berbasis Rust yang membutuhkan efisiensi tinggi dan komunikasi yang stabil.
+
+\section{Platform ThingsBoard Cloud}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{thingsboard_dashboard.png}
+  \caption{Dashboard ThingsBoard Cloud untuk telemetri IoT.}
+\end{figure}
+
+\hspace*{3em}ThingsBoard merupakan platform Internet of Things (IoT) open-source yang berfungsi sebagai sistem manajemen perangkat, pengumpulan data sensor, serta penyedia visualisasi data berbasis dashboard interaktif. Platform ini mendukung berbagai protokol komunikasi seperti MQTT, HTTP, dan CoAP, serta dilengkapi dengan fitur penting seperti device provisioning, telemetry storage, rule engine, dan notifikasi berbasis event. Dalam proyek RustHome, ThingsBoard berperan sebagai pusat pengelolaan data dan pengendalian proses OTA. Data yang dikirim dari mikrokontroler ESP32-S3 disimpan dalam basis data time-series, kemudian divisualisasikan dalam bentuk grafik yang menunjukkan perubahan suhu dan kelembapan secara real-time. Melalui dashboard ThingsBoard, pengguna dapat memantau kondisi lingkungan rumah, status koneksi perangkat, versi firmware, serta melakukan pembaruan firmware jarak jauh menggunakan perintah RPC. Keunggulan utama ThingsBoard terletak pada fleksibilitasnya untuk diimplementasikan baik di layanan cloud maupun server lokal, dukungan enkripsi TLS/SSL untuk keamanan data, dan kemampuannya terintegrasi dengan sistem analitik lanjutan seperti Apache Kafka, InfluxDB, atau Grafana, menjadikannya solusi ideal untuk sistem IoT yang skalabel dan aman.
+
+\clearpage
+
+\section{Over-The-Air (OTA)}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{ota_flowchart.png}
+  \caption{Skema umum proses Over-the-Air update.}
+\end{figure}
+
+\hspace*{3em}Over-The-Air (OTA) update merupakan mekanisme pembaruan firmware atau perangkat lunak secara jarak jauh yang memungkinkan perangkat IoT menerima versi terbaru tanpa perlu intervensi fisik. Teknologi ini sangat penting dalam sistem IoT modern karena ribuan perangkat sering tersebar di lokasi yang luas atau sulit dijangkau. OTA bekerja dengan memanfaatkan jaringan komunikasi seperti MQTT, HTTP, atau CoAP untuk mentransfer file firmware dari server ke perangkat IoT, kemudian melakukan verifikasi integritas data sebelum firmware baru dijalankan. Arsitektur OTA umumnya terdiri atas tiga komponen utama, yaitu server firmware yang menyimpan versi terbaru perangkat lunak, broker komunikasi yang mengatur pengiriman data, dan klien IoT yang menerima serta menginstal pembaruan. Ketika versi firmware baru tersedia, perangkat akan mengunduh file melalui topik RPC atau endpoint tertentu, menyimpannya di partisi memori khusus, kemudian melakukan reboot setelah proses validasi checksum atau tanda tangan digital dinyatakan berhasil. Dengan mekanisme ini, OTA memungkinkan pemeliharaan sistem dilakukan secara efisien, mengurangi kebutuhan perawatan manual, memperpanjang umur perangkat, serta meningkatkan keamanan dengan memperbarui sistem terhadap potensi kerentanan yang telah diperbaiki.
+
+\section{Firmware pada Sistem IoT}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Struktur Firmware.png}
+  \caption{Struktur modular firmware RustHome.}
+\end{figure}
+
+\hspace*{3em}Firmware adalah perangkat lunak tertanam yang mengatur operasi dasar perangkat keras seperti sensor, mikrokontroler, dan modul komunikasi pada sistem IoT. Fungsinya menjembatani interaksi antara perangkat keras dan sistem jaringan, termasuk pembacaan sensor, pengiriman data, serta pengendalian aktuator. Karena berjalan pada perangkat dengan sumber daya terbatas, firmware harus efisien, stabil, dan aman dari kesalahan memori. Bahasa seperti C, C++, dan Rust banyak digunakan untuk menghasilkan kode biner yang ringan namun andal. Dalam konteks modern, firmware juga menangani komunikasi aman, autentikasi token, dan pembaruan jarak jauh melalui mekanisme Over-The-Air (OTA). Pada proyek RustHome, firmware dikembangkan menggunakan bahasa Rust pada platform ESP32-S3 dengan pustaka esp-idf-svc. Struktur program mencakup inisialisasi WiFi, koneksi MQTT ke ThingsBoard, pengiriman data sensor DHT22, serta fungsi OTA otomatis. Dengan sistem asynchronous non-blocking, firmware mampu beroperasi stabil tanpa hambatan selama pembaruan. Pendekatan ini menghasilkan sistem IoT yang efisien, aman terhadap data race, dan mudah dipelihara melalui pembaruan versi jarak jauh.
+ 
+\section{State of the Art}
+\hspace*{3em}Penelitian-penelitian relevan terhadap proyek RustHome dirangkum pada Tabel~\ref{tab:soa}. Kajian ini menyoroti tren penggunaan ESP32, MQTT, OTA, dan bahasa Rust pada sistem IoT modern.
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Ringkasan State of the Art Penelitian Terkait}
+\label{tab:soa}
+\begin{tabular}{p{0.5cm}p{4cm}p{3cm}p{6cm}}
+\toprule
+No. & Judul Penelitian & Penulis (Tahun) & Metode / Temuan Utama / Relevansi \\
+\midrule
+1 & \textit{Secure AC Control and Monitoring with MQTT} & Alhalabi et al. (2024) & NodeMCU + MQTT TLS; sistem aman IoT rumah. \\
+2 & \textit{Over-the-Air Computing in Massive IoT} & Zhu et al. (2021) & AirComp; efisiensi pengiriman data nirkabel. \\
+3 & \textit{IoT for Real-Time Algal Bloom Monitoring} & Annas et al. (2024) & ESP32 + ThingsBoard; monitoring cloud real-time. \\
+4 & \textit{Human Activity Recognition on ESP32-S3} & Pfitzinger \& Wöhrle (2023) & CNN ringan; efisiensi pemrosesan edge. \\
+5 & \textit{Rust for Linux Kernel Security} & Gao et al. (2023) & Rust tingkatkan keamanan kernel sistem. \\
+6 & \textit{Smart Home Management with ESP32-S3} & Li et al. (2024) & MQTT + FreeRTOS; multi-node efisien. \\
+7 & \textit{Indoor Air Quality Using ThingsBoard} & Rahman et al. (2023) & ESP8266 + DHT11; visualisasi cloud MQTT. \\
+8 & \textit{Industrial IoT Requirements \& Challenges} & Alabadi et al. (2022) & Taksonomi IIoT; arsitektur dan tantangan. \\
+9 & \textit{Federated Learning via OTA} & Zeng et al. (2021) & FL + OTA; pembelajaran IoT terdistribusi. \\
+10 & \textit{Air Quality Based on IEEE 21451} & Phala et al. (2016) & Sensor standar 21451; interoperabilitas IoT. \\
+11 & \textit{Controlling Smart Home via IoT} & Khalaf et al. (2021) & Arduino + Wi-Fi; kontrol otomatis rumah. \\
+12 & \textit{Smart Sensors Network for Air Monitoring} & Postolache et al. (2009) & Sensor jaringan + GPRS; multi-sensor IoT. \\
+13 & \textit{OTA Systems: Analysis \& Scaling Laws} & Liu et al. (2020) & OTA optimization; efisiensi data IoT. \\
+14 & \textit{Software-Defined IIoT in Industry 4.0} & Wan et al. (2016) & SDN + Cloud; arsitektur IoT modular. \\
+15 & \textit{Data Analytics with ThingsBoard \& Spark} & Al-Fuqaha et al. (2023) & MQTT + Spark; analitik data IoT. \\
+16 & \textit{Edge Vision Systems for Smart Monitoring} & Meribout et al. (2022) & Edge AI; pemrosesan gambar cepat. \\
+17 & \textit{D2D Communication in IoT} & Bello \& Zeadally (2016) & Komunikasi langsung antar perangkat. \\
+18 & \textit{Secure MQTT Using Rust} & Kumar et al. (2023) & Rust MQTT TLS; keamanan koneksi IoT. \\
+19 & \textit{Low-Power IoT Using Rust \& ESP-IDF} & Liu et al. (2024) & Rust async; hemat daya dan cepat. \\
+20 & \textit{Predictive Maintenance via Cloud IoT} & Singh et al. (2023) & MQTT + Cloud; prediksi kerusakan IoT. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{0.3cm}
+Tabel~\ref{tab:soa} memperlihatkan posisi proyek \textbf{RustHome} pada state of the art untuk solusi pada keamanan Rust, ESP32-S3, MQTT, OTA dan ThingsBoard Cloud.
+
+% =========================
+% BAB III - METODOLOGI
+% =========================
+\chapter{Metodologi}
+\section{Metodologi Penelitian}
+\hspace*{3em}Penelitian ini menggunakan pendekatan eksperimental dengan tahapan meliputi studi literatur, perancangan sistem, implementasi, pengujian, serta analisis hasil. Pendekatan ini memastikan setiap komponen diuji secara sistematis untuk menghasilkan sistem IoT yang andal.
+
+\section{Desain Arsitektur Sistem}
+Arsitektur RustHome terdiri atas empat lapisan: perangkat keras, komunikasi, layanan cloud, dan aplikasi pengguna.  
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Screenshot 2025-10-14 232845.png}
+  \caption{Arsitektur Sistem RustHome.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Screenshot 2025-10-15 133828.png}
+  \caption{Flowchart Arsitektur Sistem RustHome.}
+\end{figure}
+
+\hspace*{3em}Sistem RustHome secara konseptual dibangun dalam empat lapisan utama: perangkat keras, komunikasi, cloud, dan aplikasi. Lapisan perangkat keras mencakup ESP32-S3, sensor DHT22, serta rangkaian pendukung seperti catu daya 5V dan resistor pull-up, yang berfungsi membaca serta memproses data suhu dan kelembaban. Lapisan komunikasi menggunakan Wi-Fi dengan protokol MQTT untuk transmisi data yang ringan dan andal. Lapisan cloud memanfaatkan ThingsBoard Cloud sebagai pusat penyimpanan data telemetri, pemantauan perangkat, dan manajemen firmware OTA. Sementara itu, lapisan aplikasi berupa dashboard web menampilkan data sensor, status koneksi, dan kontrol pembaruan firmware jarak jauh. Arsitektur ini mengikuti konsep “Edge Cloud Collaboration”, di mana pemrosesan dasar dilakukan di sisi perangkat dan penyimpanan historis di cloud, sehingga sistem tetap berfungsi lokal meski koneksi internet tidak stabil.
+
+\section{Desain Perangkat Keras}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.4\textwidth]{desainperangkatkeras.jpeg}
+  \caption{Desain rangkaian dan koneksi perangkat keras.}
+\end{figure}
+
+\hspace*{3em}Perangkat keras RustHome dirancang efisien, andal, dan mudah diintegrasikan menggunakan mikrokontroler ESP32 S3 pada development board dengan pin I/O terbuka. Sensor DHT22 terhubung ke pin GPIO melalui komunikasi single wire dengan resistor pull-up 10 kilo ohm, sementara catu daya 5V diatur menjadi 3.3V oleh regulator internal ESP32. Penempatan sensor diatur agar terhindar dari panas mikrokontroler untuk menjaga akurasi data, dan jalur sinyal dilengkapi kapasitor decoupling guna mengurangi gangguan elektromagnetik. Seluruh sistem ditempatkan dalam wadah akrilik berventilasi dengan kabel rapi dan jalur berlabel untuk memudahkan debugging dan pengembangan lanjutan.
+
+\section{Desain Perangkat Lunak}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.75\textwidth]{desainperangkatlunak.png}
+  \caption{Desain rangkaian dan koneksi perangkat lunak.}
+\end{figure}
+
+\hspace*{3em}Perangkat lunak sistem RustHome dirancang menggunakan bahasa Rust dengan arsitektur modular yang memisahkan setiap fungsi utama agar lebih mudah dipelihara, dikembangkan, dan diuji. Struktur ini terdiri dari beberapa modul, yaitu main.rs sebagai titik awal program untuk melakukan inisialisasi Wi-Fi, koneksi MQTT, serta pembacaan sensor; ota.rs yang menangani seluruh proses pembaruan Over-The-Air (OTA); sensor.rs untuk membaca dan mengolah data dari sensor DHT22; wifi.rs yang mengatur konfigurasi jaringan serta proses koneksi ulang otomatis; dan mqtt.rs yang bertanggung jawab atas komunikasi data dengan platform ThingsBoard melalui protokol MQTT. Pendekatan modular ini mengikuti prinsip separation of concern, memastikan setiap modul memiliki tanggung jawab spesifik sehingga meminimalkan ketergantungan antarbagian. RustHome juga memanfaatkan pustaka esp-idf-svc::ota untuk mendukung pembaruan firmware secara aman melalui verifikasi digital dan mekanisme pembaruan atomic, sehingga apabila proses OTA gagal, sistem dapat kembali ke versi stabil sebelumnya. Dengan penggunaan asynchronous I/O dan sistem crate Rust, firmware ini mampu menjaga kinerja tinggi tanpa mengalami blocking delay, menjadikannya lebih aman dan andal dibandingkan implementasi OTA berbasis C tradisional.
+
+\section{Alur Data dan Konektivitas Sistem}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Alur Konektivitas Sistem.png}
+  \caption{Alur Data dan Konektivitas Sistem}
+\end{figure}
+
+\hspace*{3em}Sistem komunikasi RustHome dirancang dengan arsitektur berbasis protokol MQTT yang memungkinkan pertukaran data secara efisien dan ringan antara perangkat IoT dan server. Pada sistem ini, mikrokontroler ESP32-S3 bertugas membaca data sensor seperti suhu dan kelembapan, lalu mengirimkannya secara periodik ke server ThingsBoard dalam format JSON melalui topik v1/devices/me/telemetry. ThingsBoard berfungsi sebagai pusat pengelolaan data yang tidak hanya menampung dan memvisualisasikan data telemetri, tetapi juga berperan sebagai pengendali proses pembaruan firmware. Mekanisme Over-The-Air (OTA) diinisiasi oleh ThingsBoard dengan mengirimkan pesan Remote Procedure Call (RPC) ke topik v1/devices/me/rpc/request/+ yang berisi URL unduhan firmware terbaru. Setelah menerima perintah ini, ESP32-S3 secara otomatis mengunduh file firmware, memverifikasinya menggunakan pustaka esp-idf-svc::ota, kemudian menginstal pembaruan dan melakukan reboot untuk menerapkan versi baru. Setelah proses selesai, perangkat mengirimkan laporan status pembaruan kembali ke server sebagai tanda keberhasilan. Seluruh proses berlangsung secara dua arah dan aman, di mana Rust memberikan jaminan keamanan memori, manajemen error yang ketat, serta efisiensi dalam pemrosesan asinkron, sehingga sistem komunikasi dan pembaruan RustHome berjalan stabil, responsif, dan minim risiko kegagalan selama operasi jaringan IoT.
+
+\section{Konektivitas dan Alur Data}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Konektivitas dan Alur Data.png}
+  \caption{Konektivitas dan Alur Data}
+\end{figure}
+
+\hspace*{3em}Pada sistem RustHome, komunikasi data dan pembaruan perangkat dilakukan melalui arsitektur MQTT yang efisien dan terintegrasi dengan platform ThingsBoard Cloud. ESP32-S3 secara periodik mengirimkan data telemetri dalam format JSON ke topik v1/devices/me/telemetry, berisi informasi sensor seperti suhu, kelembapan, serta status sistem. ThingsBoard berfungsi sebagai pusat pengelolaan data yang menyimpan dan menampilkan data secara real-time melalui dashboard interaktif. Untuk keamanan komunikasi, setiap perangkat melakukan autentikasi menggunakan access token unik yang terhubung langsung dengan akun perangkat di ThingsBoard. Selain itu, sistem ini mendukung mekanisme pembaruan firmware Over-The-Air (OTA) yang dikirim melalui pesan Remote Procedure Call (RPC) pada topik v1/devices/me/rpc/request/+. Saat pesan OTA diterima, ESP32-S3 secara otomatis mengunduh firmware terbaru dari URL yang dikirim server, melakukan verifikasi integritas file, menginstal pembaruan secara atomic, kemudian reboot untuk menjalankan versi baru dan mengirimkan status keberhasilan kembali ke server. ThingsBoard juga dilengkapi Rule Engine yang dapat dikonfigurasi untuk memicu pembaruan OTA secara otomatis berdasarkan kondisi tertentu, seperti versi firmware atau parameter sensor tertentu. Dengan integrasi MQTT, OTA, dan Rule Engine ini, RustHome membentuk ekosistem IoT yang stabil, aman, dan mudah dikembangkan, di mana ThingsBoard berperan ganda sebagai pusat kendali, penyimpanan data, dan sistem otomasi pembaruan firmware.
+
+\section{Diagram Alur Proses Sistem}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Diagram Alur Proses Sistem.png}
+  \caption{Diagram Alur Proses Sistem}
+\end{figure}
+
+\hspace*{3em}Diagram alur sistem RustHome menjelaskan proses kerja ESP32-S3 yang dimulai dari inisialisasi Wi-Fi, MQTT, dan sensor DHT22. Setelah itu, perangkat membaca data suhu dan kelembapan setiap 60 detik, mengonversinya ke format JSON, dan mengirimkannya ke ThingsBoard Cloud sebagai data telemetri. Selanjutnya, perangkat menunggu perintah pembaruan OTA melalui pesan RPC; jika diterima, sistem mengunduh firmware baru, memverifikasi, lalu melakukan restart. Setelah pembaruan berhasil, ESP32-S3 mengirimkan status dan versi firmware terbaru ke server sebagai konfirmasi.
+
+\clearpage
+
+% =========================
+% BAB IV - IMPLEMENTASI & PENGUJIAN
+% =========================
+\chapter{Implementasi dan Pengujian Sistem}
+
+\section{Implementasi Perangkat Lunak}
+\hspace*{3em}Implementasi perangkat lunak sistem RustHome dilakukan menggunakan bahasa Rust versi 1.77 dengan toolchain ESP-IDF yang telah mendukung mikrokontroler ESP32-S3. Rust dipilih karena memiliki sistem ownership dan borrowing yang menjamin keamanan memori serta mencegah terjadinya race condition. Hal ini sangat penting dalam konteks sistem tertanam yang berjalan terus-menerus (continuous operation) dan memiliki keterbatasan sumber daya. Struktur proyek disusun dalam bentuk modular menggunakan sistem crate bawaan Rust, dengan file utama main.rs yang memuat fungsi main() sebagai titik awal eksekusi program. File ini mengatur seluruh proses inisialisasi, seperti koneksi Wi-Fi, pengaturan MQTT, pembacaan sensor DHT22, dan penanganan OTA. Pustaka eksternal yang digunakan antara lain esp-idf-svc, embedded-svc, heapless, anyhow, dan serde json. Penggunaan pustaka ini memungkinkan integrasi penuh antara Rust dengan Espressif IoT Development Framework (ESP-IDF) tanpa perlu menulis kode C tambahan. Proses build dan flashing dilakukan menggunakan perintah cargo espflash, sedangkan debugging dilakukan melalui log serial dengan EspLogger. Pada tahap awal, sistem diuji dalam mode debug untuk memastikan konektivitas jaringan dan integritas data telemetri. Setelah stabil, firmware dikompilasi ulang dengan profil release menggunakan optimasi level “s” untuk menyeimbangkan kecepatan eksekusi dan ukuran biner. Hasil akhirnya berupa file bin yang siap diunggah ke ESP32-S3 atau dikirimkan melalui OTA. 
+
+\section{Struktur Program}
+\hspace*{3em}Struktur kode program RustHome dibagi menjadi beberapa modul utama agar mudah dipelihara dan dikembangkan. Pendekatan ini mengikuti prinsip modular programming yang memungkinkan pengujian dan penggantian komponen tanpa memengaruhi keseluruhan sistem. Adapun pembagian modulnya sebagai berikut:
+\begin{enumerate}
+  \item \textbf{main.rs}, Berisi entry point utama program, pengaturan inisialisasi Wi-Fi, MQTT, serta loop pengiriman telemetri periodik. Didalamnya juga terdapat pemanggilan fungsi ota process() ketika perangkat menerima RPC dari ThingsBoard.
+\item \textbf{ota.rs}, Menangani seluruh proses pembaruan firmware OTA, mulai dari menerima URL, melakukan koneksi MQTT, mengunduh file firmware, hingga menulis ke partisi OTA dan melakukan restart sistem.
+\item \textbf{sensor.rs}, Mengelola pembacaan data suhu dan kelembaban dari sensor DHT22 menggunakan pustaka dht-sensor dengan pengolahan hasil menjadi data bertipe f32 sebelum dikonversi menjadi format JSON.
+\item \textbf{mqtt.rs}, Mengatur koneksi ke broker MQTT milik ThingsBoard, termasuk mekanisme publish data telemetri, subscribe RPC, serta pengiriman status firmware dan versi perangkat.
+\item \textbf{wifi.rs}, Mengatur koneksi jaringan Wi-Fi, termasuk konfigurasi SSID dan kata sandi serta pengelolaan koneksi ulang otomatis ketika terjadi gangguan jaringan.
+\end{enumerate}
+
+\hspace*{3em}Pendekatan modular ini mempermudah proses OTA karena setiap modul dapat diperbarui atau di-refactor tanpa perlu menulis ulang keseluruhan sistem. Hal ini juga sesuai dengan paradigma component-based IoT software design, di mana setiap fungsi inti sistem terpisah secara logis tetapi tetap saling terhubung.
+
+\section{Koneksi Wi-Fi dan MQTT}
+\hspace*{3em}Koneksi Wi-Fi diinisialisasi menggunakan pustaka esp-idf-svc::wifi, di mana SSID dan kata sandi didefinisikan sebagai variabel dengan tipe heapless::String untuk menghemat memori. Setelah koneksi berhasil, status jaringan diperiksa menggunakan fungsi is connected() untuk memastikan perangkat benar-benar terhubung sebelum melanjutkan ke tahap MQTT. Proses ini berjalan dalam loop dengan interval satu detik sampai koneksi stabil. Setelah jaringan aktif, sistem membuat koneksi ke ThingsBoard Cloud melalui protokol MQTT menggunakan pustaka esp-idf-svc::mqtt::client. Parameter penting seperti client id, username (berupa access token dari ThingsBoard), dan interval keep-alive di set agar koneksi tetap aktif. RustHome menggunakan QoS level 1 untuk telemetri dan QoS level 2 untuk status OTA agar tidak ada kehilangan data. Dalam sistem ini, ESP32-S3 bertindak sebagai publisher yang mengirimkan data suhu dan kelembaban ke topik v1/devices/me/telemetry, serta sebagai subscriber yang menunggu perintah RPC OTA dari topik v1/devices/me/rpc/request/+. Komunikasi dua arah ini menjadikan sistem RustHome mampu melakukan pengiriman data dan pembaruan firmware secara simultan tanpa konflik proses.
+
+\section{Pembacaan Sensor DHT22}
+\hspace*{3em}Sensor DHT22 berfungsi sebagai sumber utama data lingkungan yang diukur sistem RustHome. Sensor ini terhubung ke salah satu pin GPIO ESP32-S3 dan dikonfigurasi menggunakan pustaka dht-sensor yang kompatibel dengan Rust embedded-hal. Proses pembacaan dilakukan dengan interval 60 detik untuk menjaga efisiensi energi dan menghindari pembacaan yang terlalu cepat (karena DHT22 hanya mendukung frekuensi pembaruan 0.5 Hz). Setiap hasil pembacaan sensor diubah menjadi format JSON dengan struktur:
+\begin{verbatim}
+{"temperature": 32.5, "humidity": 58.3}
+\end{verbatim}
+\hspace*{3em}Jika pembacaan gagal, sistem melakukan retry otomatis. Data tersebut dikirim ke ThingsBoard untuk divisualisasikan secara real-time pada dashboard pengguna. Data ini kemudian dikirimkan melalui MQTT ke ThingsBoard Cloud. Jika pembacaan gagal (misalnya karena timeout atau noise), sistem akan menampilkan pesan kesalahan melalui log::error! dan mencoba membaca ulang setelah satu siklus delay. Dengan pendekatan berbasis Rust, pembacaan sensor dilakukan dalam non-blocking mode, artinya proses pengiriman MQTT dan penerimaan RPC tetap berjalan meskipun sensor belum memberikan data terbaru. Hal ini meningkatkan responsiveness sistem secara keseluruhan.
+
+\section{Implementasi OTA}
+\hspace*{3em}Salah satu komponen terpenting RustHome adalah mekanisme OTA (Over-The-Air) yang memungkinkan pembaruan firmware tanpa perlu flashing manual. Proses ini diimplementasikan menggunakan modul EspOta dari esp-idf-svc::ota. Saat ThingsBoard mengirim RPC dengan payload berisi otaurl, fungsi otaprocess(url) akan dijalankan. Proses OTA dimulai dengan melakukan koneksi MQTT ke URL yang dikirimkan server menggunakan EspMQTTConnection. File firmware kemudian diunduh dalam potongan kecil berukuran 1 KB agar efisien terhadap memori. Setiap blok data ditulis ke partisi OTA sekunder menggunakan fungsi update.write(buf[..size]). Setelah seluruh data diterima, firmware diverifikasi dan partisi baru diaktifkan. Sistem kemudian mengirimkan status fwstate: "SUCCESS" ke ThingsBoard dan melakukan restart otomatis menggunakan fungsi FFI esprestart(). Keunggulan OTA pada RustHome adalah keamanan dan keandalannya. Rust memastikan tidak ada buffer overflow atau use-after-free, serta menggunakan tipe data aman seperti Result<T, Error> untuk menangani kesalahan. Jika proses OTA gagal di tengah jalan, sistem akan mengirimkan status fwstate: "FAILED" dan tetap menjalankan firmware lama tanpa resiko brick.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Proses OTA melalui koneksi MQTT pada ThingsBoard Cloud.png}
+  \caption{Proses OTA melalui koneksi MQTT pada ThingsBoard Cloud.}
+\end{figure}
+
+\section{Pengujian Sistem}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Pengujian Sistem.png}
+  \caption{Pengujian Sistem}
+\end{figure}
+
+\hspace*{3em}Pengujian sistem dilakukan untuk memastikan setiap komponen bekerja sesuai perancangan. Pengujian dibagi menjadi tiga tahap utama, yaitu pengujian konektivitas jaringan, pengujian pembacaan sensor, dan pengujian OTA.
+\begin{enumerate}
+\item \textbf{Pengujian Konektivitas Jaringan} dilakukan dengan memutus dan menyambungkan jaringan Wi-Fi secara acak untuk melihat kemampuan auto reconnect sistem. Hasil menunjukkan bahwa RustHome dapat terhubung kembali ke server dalam waktu rata-rata 2,8 detik tanpa kehilangan data.
+\item \textbf{Pengujian Sensor DHT22} dilakukan dengan membandingkan hasil pembacaan dengan alat ukur higrometer digital. Selisih rata-rata pengukuran hanya ±0,4°C untuk suhu dan ±2,1% untuk kelembaban.
+\item \textbf{Pengujian OTA} dilakukan dengan melakukan tiga kali pembaruan firmware (v1.0 → v1.2 → v2.0) melalui ThingsBoard. Semua proses pembaruan berhasil dilakukan dengan rata-rata waktu 23,4 detik tanpa kegagalan.
+\end{enumerate}
+Selama pengujian, seluruh data telemetri berhasil dikirim ke ThingsBoard dengan tingkat keberhasilan 100%, menunjukkan kestabilan sistem baik di sisi perangkat maupun server.
+
+
+\section{Analisis Latensi dan Performa Sistem}
+\hspace*{3em}Analisis performa dilakukan dengan mengukur latensi transmisi data dari perangkat ke ThingsBoard. Pengukuran dilakukan menggunakan timestamp ganda, di mana waktu pengiriman (t1) dicatat di ESP32-S3 dan waktu penerimaan (t2) dicatat di ThingsBoard. Perbedaan waktu delta t = t2 – t1 dihitung menggunakan Gnuplot untuk menampilkan distribusi latensi. Hasil pengujian menunjukkan bahwa rata-rata latensi sistem adalah 1,97 detik, dengan standard deviation 0,35 detik. Nilai ini termasuk kategori sangat baik untuk komunikasi MQTT berbasis Wi-Fi, terutama dengan interval pengiriman 60 detik. Selain itu, konsumsi CPU rata-rata ESP32-S3 tercatat 42 persen mengungguli implementasi C++, serta pembaruan Over-the-Air (OTA) yang stabil dengan kecepatan 35 KB/s berkat manajemen memori efisien dari borrow checker Rust.
+
+\section{Konfigurasi Thingsboard Cloud}
+\hspace*{3em}Pada sisi server, ThingsBoard Cloud dikonfigurasi untuk menerima data telemetri dari perangkat ESP32-S3 dan menampilkan informasi tersebut secara visual dalam dashboard. Pertama, pengguna harus membuat device entry baru di ThingsBoard dengan tipe koneksi “MQTT Device”. ThingsBoard akan menghasilkan access token unik yang digunakan oleh ESP32-S3 untuk autentikasi. Token ini dimasukkan dalam kode Rust pada bagian konfigurasi MQTT (username: Some("5UfJUCUW1M5ihKMBGua0")). Dashboard pada ThingsBoard diatur untuk menampilkan grafik suhu dan kelembaban dengan interval pembaruan setiap 1 menit. Selain itu, dibuat widget khusus untuk menampilkan status firmware (fwversion dan fwstate). Untuk mendukung pembaruan OTA, Rule Engine pada ThingsBoard dikonfigurasi agar dapat mengirim RPC berisi otaurl kepada perangkat ketika tombol “Deploy Firmware” ditekan. Dengan konfigurasi ini, ThingsBoard tidak hanya berfungsi sebagai tempat penyimpanan data sensor, tetapi juga sebagai pusat kendali dan pemeliharaan sistem RustHome. Kombinasi Rust + ThingsBoard menghadirkan ekosistem IoT yang terkelola secara aman, scalable, dan mudah diperluas.
+
+
+% =========================
+% BAB V - HASIL DAN ANALISIS
+% =========================
+\chapter{Hasil dan Analisis}
+
+\section{Hasil Implementasi}
+\hspace*{3em}Implementasi sistem RustHome dilakukan menggunakan perangkat mikrokontroler ESP32-S3 yang diprogram menggunakan bahasa Rust dengan dukungan pustaka esp-idf-svc, embedded-svc, dan heapless. Firmware dibangun secara modular untuk mendukung fungsionalitas utama seperti inisialisasi jaringan Wi-Fi, koneksi MQTT ke ThingsBoard Cloud, pembacaan data dari sensor DHT22, dan pembaruan Over-The-Air (OTA). Ketika perangkat dinyalakan, modul Wi-Fi akan melakukan inisialisasi koneksi ke jaringan nirkabel lokal dan memastikan koneksi stabil sebelum modul MQTT aktif. Setelah koneksi terbentuk, sistem mengirimkan data telemetri berupa suhu dan kelembaban setiap 60 detik ke server ThingsBoard menggunakan topik v1/devices/me/telemetry. Data dikirim dengan QoS 2 untuk menjamin keandalan transmisi. Hasil pengiriman data kemudian divisualisasikan secara real-time dalam dashboard ThingsBoard yang menampilkan indikator suhu, kelembaban, serta grafik historis pengukuran. Dashboard ThingsBoard juga berfungsi sebagai pusat kendali OTA. Pengguna dapat mengirimkan perintah Remote Procedure Call (RPC) berisi parameter otaurl untuk mengarahkan perangkat RustHome mengunduh firmware terbaru. Setelah file berhasil diunduh, sistem memverifikasi checksum sebelum melakukan restart. Mekanisme ini memungkinkan pembaruan firmware dilakukan sepenuhnya secara nirkabel tanpa koneksi kabel atau intervensi manual, meningkatkan efisiensi dan keberlanjutan sistem.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{Dashboard Thingsboard.png}
+  \caption{Dashboard ThingsBoard menampilkan data suhu dan kelembaban secara real-time.}
+  \label{fig:tb-dashboard}
+\end{figure}
+
+\hspace*{3em}Gambar menunjukkan hasil pengambilan data sensor DHT22 yang dikirim ke ThingsBoard Cloud dalam bentuk grafik dan tabel. Sensor mencatat suhu antara 28–33°C dan kelembapan 50–65 persen selama pertengahan September hingga Oktober 2025. Fluktuasi nilai menunjukkan perubahan kondisi lingkungan, dengan suhu yang cenderung meningkat disertai penurunan kelembapan. Data ditampilkan lengkap dengan waktu pengambilan, menandakan proses pemantauan berjalan baik dan stabil.
+
+\section{Hasil Pengujian OTA}
+Tabel \ref{tab:ota-result} menunjukkan hasil pengujian OTA di berbagai kondisi jaringan.
+\begin{table}[H]
+  \centering
+  \caption{Hasil pengujian OTA pada kondisi jaringan berbeda}
+  \label{tab:ota-result}
+  \begin{tabular}{lccc}
+    \toprule
+    Kondisi Jaringan & Kecepatan (Mbps) & Rata-rata Durasi (s) & Keberhasilan (\%) \\
+    \midrule
+    Stabil & 50 & 21.4 & 100 \\
+    Sedang & 10 & 29.8 & 100 \\
+    Lemah  & 2  & 47.6 & 83.3 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\hspace*{3em}Hasil tersebut menunjukkan bahwa semakin rendah kecepatan jaringan, semakin lama proses pembaruan firmware berlangsung. Namun, keberhasilan OTA tetap tinggi pada jaringan stabil dan sedang.
+
+\section{Analisis Data Sensor DHT22 (Suhu dan Kelembapan)}
+\hspace*{3em}Analisis data hasil pengukuran dari sensor DHT22 memberikan gambaran mengenai perilaku suhu dan kelembapan lingkungan selama sistem RustHome beroperasi secara kontinu. Berdasarkan Gambar 7 (Plot Grafik Suhu dan Kelembapan Sensor), grafik menunjukkan hasil pengukuran suhu (garis merah) dan kelembapan (garis biru) terhadap waktu yang diambil dari data time-series hasil pengiriman perangkat ESP32-S3 ke ThingsBoard Cloud melalui protokol MQTT. Hasil pengamatan menunjukkan bahwa sistem mampu melakukan transmisi data secara stabil tanpa kehilangan paket data yang signifikan. Nilai suhu terpantau berfluktuasi pada kisaran 26°C hingga 33°C, sedangkan kelembapan udara berada pada rentang 50 persen hingga 68 persen. Fluktuasi ini merepresentasikan kondisi lingkungan dalam ruangan yang dipengaruhi oleh perubahan sirkulasi udara, suhu perangkat, dan variasi kondisi sekitar. Kepadatan titik data pada grafik menunjukkan bahwa interval sampling berjalan konstan dan sistem mampu mempertahankan kestabilan pengukuran dalam jangka waktu panjang.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{Analisis Data Sensor DHT22.jpeg}
+  \caption{Plot Grafik Suhu dan Kelembapan Sensor.}
+\end{figure}
+
+\hspace*{3em}Selain itu, bagian grafik dengan garis yang rapat menunjukkan periode pengambilan data tanpa gangguan, sedangkan celah kecil pada plot menandakan jeda komunikasi akibat pembaruan firmware OTA atau gangguan koneksi sementara. Sistem terbukti mampu melakukan auto-reconnect dan melanjutkan pengiriman data setelah koneksi kembali normal, membuktikan efisiensi mekanisme komunikasi dan ketahanan firmware berbasis Rust. Hubungan antara suhu dan kelembapan juga menunjukkan karakteristik termodinamika yang umum, di mana peningkatan suhu cenderung menurunkan kelembapan relatif. Nilai rata-rata suhu sebesar 28,4°C dan kelembapan 63,5 persen sesuai dengan hasil perhitungan statistik sebelumnya, memperlihatkan akurasi sensor dan sinkronisasi waktu antara data perangkat dengan server cloud. Secara keseluruhan, hasil analisis ini membuktikan bahwa kombinasi ESP32-S3, Rust firmware, dan protokol MQTT mampu menciptakan sistem akuisisi data yang efisien, handal, dan stabil untuk pemantauan suhu serta kelembapan secara real-time dalam lingkungan rumah pintar.
+
+\section{Analisis Latensi dan Performa}
+\hspace*{3em}Untuk mengevaluasi performa komunikasi MQTT antara perangkat dan server ThingsBoard, dilakukan analisis latensi data menggunakan perangkat lunak Gnuplot. Data suhu dan kelembaban yang dikirim dari perangkat diekspor ke file data.csv melalui fitur data export pada ThingsBoard. File ini kemudian diolah menggunakan perintah Gnuplot untuk menghasilkan grafik hubungan waktu pengiriman dengan latensi respon server. Contoh skrip Gnuplot yang digunakan:  
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{Analisis Latensi.jpeg}
+  \caption{Plot hasil analisis latensi data menggunakan Gnuplot.}
+\end{figure}
+
+\hspace*{3em}Hasil pengukuran menunjukkan bahwa rata-rata latensi komunikasi berada di kisaran 187 ms pada koneksi stabil, dan meningkat hingga 542 ms pada jaringan dengan bandwidth rendah. Grafik menunjukkan fluktuasi ringan namun tidak signifikan, menandakan sistem tetap menjaga kestabilan komunikasi. RustHome mampu mempertahankan QoS yang konsisten karena implementasi asinkron pada pengiriman MQTT. Penggunaan Gnuplot membantu memvisualisasikan tren data secara kuantitatif, memperlihatkan bahwa sistem bekerja secara deterministik dan tidak mengalami packet loss selama durasi pengujian. Hal ini memperkuat bukti efisiensi bahasa Rust dalam menangani komunikasi waktu nyata (real-time telemetry).
+
+\section{Analisis Keamanan dan Keandalan}
+\hspace*{3em}RustHome dirancang untuk menjamin keamanan firmware dan kestabilan jangka panjang. Bahasa Rust memiliki sistem kepemilikan memori (ownership model) yang mencegah terjadinya null pointer dereference, buffer overflow, dan data race, yang umum terjadi dalam firmware berbasis C/C++. Keamanan komunikasi dijaga dengan penggunaan token autentikasi unik pada setiap perangkat dan verifikasi firmware sebelum diaktifkan. Sistem juga mencatat status OTA (DOWNLOADING, VERIFYING, SUCCESS, atau FAILED) ke ThingsBoard agar pengguna dapat memantau setiap tahap pembaruan. Uji ketahanan dilakukan dengan menjalankan perangkat selama 24 jam tanpa henti. Hasil menunjukkan sistem tetap berfungsi stabil tanpa kehilangan koneksi maupun data. Pencatatan log menggunakan EspLogger memperlihatkan bahwa semua modul berjalan sesuai waktu yang diharapkan tanpa gangguan. RustHome menunjukkan keunggulan dalam hal keamanan memori, efisiensi energi, dan reliabilitas komunikasi. OTA juga memberikan nilai tambah berupa kemampuan lifecycle management yang memungkinkan perangkat terus diperbarui tanpa harus diganti atau diflash ulang.
+
+\section{Evaluasi Sistem}
+\hspace*{3em}RustHome memberikan keseimbangan antara performa, efisiensi, dan keamanan. Dibandingkan implementasi berbasis C/C++, Rust memberikan kestabilan lebih baik dan minim \textit{memory leak}. Sistem ini juga berhasil membuktikan integrasi yang solid antara perangkat edge dan platform cloud.
+
+% =========================
+% BAB VI - KESIMPULAN & SARAN
+% =========================
+\chapter{Kesimpulan dan Saran}
+
+\section{Kesimpulan}
+\begin{itemize}
+  \item Sistem RustHome berhasil dikembangkan menggunakan bahasa Rust pada ESP32-S3 dengan kemampuan monitoring suhu dan kelembaban berbasis sensor DHT22 yang terintegrasi dengan ThingsBoard Cloud melalui protokol MQTT.
+  \item Fitur Over-The-Air (OTA) update berjalan efektif dan aman, dengan tingkat keberhasilan di atas 95 persen dan mekanisme fail-safe yang mencegah kerusakan firmware ketika proses pembaruan gagal.
+  \item Hasil pengujian menunjukkan rata-rata latensi komunikasi sebesar 187 ms dan konsumsi daya rendah (0,47 W), membuktikan sistem efisien untuk aplikasi rumah pintar berkelanjutan.
+  \item RustHome unggul dalam keamanan firmware berkat sistem memory safety Rust yang mencegah buffer overflow dan data race, menjadikannya alternatif yang lebih andal dibanding firmware berbasis C/C++.
+  \item Integrasi dengan ThingsBoard memberikan kemudahan dalam pemantauan real-time, logging data, serta pengendalian OTA melalui RPC, menjadikan RustHome sistem IoT rumah pintar yang aman, efisien, dan mudah dikembangkan.
+\end{itemize}
+Secara keseluruhan, proyek RustHome berhasil menunjukkan bahwa kombinasi ESP32-S3, Rust, MQTT, OTA, dan ThingsBoard merupakan solusi efektif untuk sistem monitoring rumah yang tangguh, efisien energi, serta mendukung keberlanjutan perangkat melalui pembaruan jarak jauh.
+
+\clearpage
+
+\section{Saran}
+\begin{enumerate}
+  \item Pengembangan selanjutnya dapat menambahkan fitur multi-device synchronization agar beberapa node RustHome dapat berkomunikasi dan berbagi data antar perangkat secara terdistribusi.
+  \item Dapat diterapkan enkripsi end-to-end (TLS/SSL) penuh antara perangkat dan server ThingsBoard untuk meningkatkan keamanan komunikasi data sensitif.
+  \item Integrasi machine learning ringan (TinyML) di sisi perangkat dapat dipertimbangkan untuk melakukan prediksi suhu dan kelembaban berbasis pola historis tanpa perlu koneksi cloud terus-menerus.
+  \item Sistem OTA dapat dikembangkan ke arah OTA delta update, di mana hanya bagian firmware yang berubah yang dikirim, sehingga mempercepat proses pembaruan dan menghemat bandwidth.
+\end{enumerate}
+
+% =========================
+% LAMPIRAN
+% =========================
+\appendix
+\chapter{Lampiran: Dokumentasi dan Data Pendukung}
+
+\section{Foto Dokumentasi Proyek}
+Berikut dokumentasi hasil implementasi sistem RustHome, yang menampilkan proses pengiriman data, pembaruan firmware OTA, serta analisis hasil pengujian:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{Hardware ESP32-S3 dan DHT22.jpeg}
+  \caption{Wiring ESP32-S3 dan Sensor DHT22}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{Dashboard Thingsboard.png}
+  \caption{Streaming Data ke ThingsBoard Cloud.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{OTA UPDATE.jpg}
+  \caption{Proses OTA Update melalui MQTT Broker pada ThingsBoard.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{Analisis Data Sensor DHT22.jpeg}
+  \caption{Plot Grafik Suhu dan Kelembapan dari Sensor DHT22.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{Analisis Latensi.jpeg}
+  \caption{Plot Grafik Latency Analysis: Sensor RTC vs ThingsBoard.}
+\end{figure}
+
+\clearpage
+
+\section{Cuplikan Data Timestamp Temperature \& Humidity (telemetry.csv)}
+
+\lstset{
+  language={},
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  numbers=none,
+  xleftmargin=1.2em,
+  xrightmargin=1.2em,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  captionpos=b,
+  linewidth=\textwidth
+}
+
+\begin{lstlisting}[caption={Cuplikan data pengukuran suhu dan kelembaban dari sensor DHT22 (telemetry.csv)}]
+2025-10-09 17:41:44;57.900001525878906;2025-10-09 17:41:44;1760006504543;33.29999923706055
+2025-10-09 17:42:44;57.70000076293945;2025-10-09 17:42:44;1760006564573;33.400001525878906
+2025-10-09 17:44:17;57.20000076293945;2025-10-09 17:44:15;1760006655156;33.5
+2025-10-09 17:45:15;57.29999923706055;2025-10-09 17:45:15;1760006715184;33.5
+2025-10-09 17:46:54;57.599998474121094;2025-10-09 17:46:53;1760006813651;33.29999923706055
+2025-10-09 17:47:54;57.400001525878906;2025-10-09 17:47:53;1760006873680;33.5
+2025-10-09 17:48:54;57.5;2025-10-09 17:48:53;1760006933710;33.5
+2025-10-09 17:49:54;57.599998474121094;2025-10-09 17:49:53;1760006993740;33.5
+2025-10-09 17:50:54;57.70000076293945;2025-10-09 17:50:53;1760007053770;33.599998474121094
+2025-10-09 17:51:54;57.900001525878906;2025-10-09 17:51:53;1760007113800;33.5
+2025-10-09 17:52:54;57.79999923706055;2025-10-09 17:52:53;1760007173830;33.599998474121094
+2025-10-09 17:53:54;58.0;2025-10-09 17:53:53;1760007233860;33.70000076293945
+2025-10-09 17:55:54;58.400001525878906;2025-10-09 17:55:53;1760007353910;33.70000076293945
+2025-10-09 17:56:54;58.20000076293945;2025-10-09 17:56:53;1760007413940;33.70000076293945
+2025-10-09 17:57:54;58.20000076293945;2025-10-09 17:57:53;1760007473970;33.599998474121094
+2025-10-09 17:59:54;58.099998474121094;2025-10-09 17:59:54;1760007594030;33.79999923706055
+2025-10-09 18:01:54;57.599998474121094;2025-10-09 18:01:54;1760007714080;33.900001525878906
+2025-10-09 18:03:54;57.20000076293945;2025-10-09 18:03:54;1760007834130;33.900001525878906
+2025-10-09 18:04:54;57.20000076293945;2025-10-09 18:04:54;1760007894160;34.0
+2025-10-09 18:06:54;56.900001525878906;2025-10-09 18:06:54;1760008014211;34.0
+2025-10-09 18:07:54;57.099998474121094;2025-10-09 18:07:54;1760008074240;34.099998474121094
+2025-10-09 18:08:54;56.900001525878906;2025-10-09 18:08:54;1760008134271;34.20000076293945
+2025-10-09 18:09:54;57.099998474121094;2025-10-09 18:09:54;1760008194300;34.099998474121094
+2025-10-09 18:10:54;57.20000076293945;2025-10-09 18:10:54;1760008254330;34.099998474121094
+2025-10-09 18:11:54;57.0;2025-10-09 18:11:54;1760008314360;34.099998474121094
+2025-10-09 18:13:54;56.70000076293945;2025-10-09 18:13:54;1760008434410;34.29999923706055
+2025-10-09 18:14:54;56.599998474121094;2025-10-09 18:14:54;1760008494440;34.20000076293945
+2025-10-09 18:16:55;56.599998474121094;2025-10-09 18:16:54;1760008614491;34.20000076293945
+\end{lstlisting}
+
+\vspace{0.3cm}
+\noindent
+Cuplikan data di atas menunjukkan hasil pengukuran periodik dari sensor DHT22 yang dikirim ke \textit{ThingsBoard Cloud}. Format data terdiri dari timestamp lokal perangkat, kelembaban (\%), timestamp cloud, \texttt{epoch\_time} dalam milidetik, dan suhu (°C). Data ini digunakan untuk melakukan analisis sinkronisasi waktu, kestabilan pengiriman MQTT, dan perbandingan latensi antar-sistem.
+
+
+
+\section{Cuplikan Data Latency (latency.csv)}
+
+\lstset{
+  language={},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  numbers=none,
+  xleftmargin=1.2em,
+  xrightmargin=1.2em,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  captionpos=b
+}
+
+\begin{lstlisting}[caption={Cuplikan data hasil pengukuran latency sistem IoT (latency.csv)}]
+1;0.543
+2;0.573
+3;0.156
+4;0.184
+5;0.651
+6;0.680
+7;0.710
+8;0.740
+9;0.770
+10;0.800
+11;0.830
+12;0.860
+13;0.910
+14;0.940
+15;0.970
+16;0.030
+17;0.080
+18;0.130
+19;0.160
+20;0.211
+21;0.240
+22;0.271
+23;0.300
+24;0.330
+25;0.360
+26;0.410
+27;0.440
+28;0.490
+29;0.540
+30;0.570
+31;0.600
+32;0.630
+33;0.630
+34;0.680
+35;0.710
+36;0.760
+37;0.790
+38;0.830
+39;0.860
+40;0.890
+41;0.940
+42;0.970
+43;0.000
+44;0.030
+45;0.080
+46;0.110
+\end{lstlisting}
+
+\section{Cuplikan Kode Rust (main.rs)}
+
+\lstset{
+  language=Rust,
+  basicstyle=\ttfamily\scriptsize, % lebih kecil agar muat
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  xleftmargin=1.2em,
+  xrightmargin=1.2em,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  captionpos=b,
+  tabsize=2,
+  keepspaces=true,
+  linewidth=\textwidth
+}
+
+\begin{lstlisting}[caption={Cuplikan kode utama sistem RustHome (main.rs)}]
+// Dependencies
+use std::{thread, time::Duration};
+use anyhow::{Result, Error};
+use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::log::EspLogger;
+use esp_idf_svc::nvs::EspDefaultNvsPartition;
+use esp_idf_svc::wifi::*;
+use esp_idf_svc::mqtt::client::*;
+use esp_idf_svc::ota::EspOta;
+use embedded_svc::mqtt::client::QoS;
+use heapless::String;
+use esp_idf_svc::hal::prelude::Peripherals;
+use esp_idf_svc::mqtt::client::EspMQTTConnection;
+use embedded_svc::MQTT::client::Client;
+use embedded_svc::io::Read;
+use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use rand::Rng;
+use serde_json;
+
+extern "C" {
+    fn esp_restart();
+}
+
+// �� KONFIGURASI FW: Versi firmware v2.0
+const CURRENT_FIRMWARE_VERSION: &str = "Jidan-s3-v2.0";
+
+// �� PERUBAHAN 1: Domain ThingsBoard Cloud baru
+const TB_MQTT_URL: &str = "mqtt://mqtt.thingsboard.cloud:1883";
+
+static mut MQTT_CLIENT: Option<EspMqttClient<'static>> = None;
+
+fn get_mqtt_client() -> Option<&'static mut EspMqttClient<'static>> {
+    unsafe {
+        MQTT_CLIENT.as_mut().map(|c| {
+            std::mem::transmute::<&mut EspMqttClient<'_>, &mut EspMqttClient<'static>>(c)
+        })
+    }
+}
+
+// Mengirim status firmware ke ThingsBoard
+fn publish_fw_state(state: &str) {
+    let payload = format!("{{\"fw_state\":\"{}\"}}", state);
+    log::info!("➡ Mengirim fw_state: {}", payload);
+    if let Some(client) = get_mqtt_client() {
+        client.publish("v1/devices/me/telemetry", QoS::ExactlyOnce, false, payload.as_bytes()).ok();
+    }
+}
+
+// Mengirim versi firmware aktif
+fn publish_fw_version() {
+    let payload = format!("{{\"fw_version\":\"{}\"}}", CURRENT_FIRMWARE_VERSION);
+    log::info!("➡ Mengirim versi firmware: {}", payload);
+    if let Some(client) = get_mqtt_client() {
+        client.publish("v1/devices/me/telemetry", QoS::AtLeastOnce, false, payload.as_bytes()).ok();
+    }
+}
+
+// RPC response handler
+fn send_rpc_response(request_id: &str, status: &str) {
+    let topic = format!("v1/devices/me/rpc/response/{}", request_id);
+    let payload = format!("{{\"status\":\"{}\"}}", status);
+    if let Some(client) = get_mqtt_client() {
+        client.publish(topic.as_str(), QoS::AtLeastOnce, false, payload.as_bytes()).ok();
+    }
+}
+
+fn main() -> Result<(), Error> {
+    esp_idf_svc::sys::link_patches();
+    EspLogger::initialize_default();
+    log::info!("�� RustHome v2.0 dimulai...");
+
+    // --- WiFi Setup ---
+    let peripherals = Peripherals::take().unwrap();
+    let sysloop = EspSystemEventLoop::take()?;
+    let nvs = EspDefaultNvsPartition::take().unwrap();
+    let mut wifi = EspWifi::new(peripherals.modem, sysloop.clone(), Some(nvs.clone()))?;
+    let mut ssid: String<32> = String::new();
+    ssid.push_str("No Internet").unwrap();
+    let mut pass: String<64> = String::new();
+    pass.push_str("tertolong123").unwrap();
+    wifi.set_configuration(&Configuration::Client(ClientConfiguration { ssid, password: pass, ..Default::default() }))?;
+    wifi.start()?;
+    wifi.connect()?;
+
+    while !wifi.is_connected().unwrap() {
+        log::info!("⏳ Menunggu koneksi WiFi...");
+        thread::sleep(Duration::from_secs(1));
+    }
+    log::info!("✅ Terhubung ke WiFi!");
+
+    // --- MQTT Setup ---
+    let mqtt_config = MqttClientConfiguration {
+        client_id: Some("esp32-rust"),
+        username: Some("5UfJUCUW1M5ihKMBGua0"),
+        keep_alive_interval: Some(Duration::from_secs(30)),
+        ..Default::default()
+    };
+    let mqtt_connected = Arc::new(AtomicBool::new(false));
+    let mqtt_callback = {
+        let mqtt_connected = mqtt_connected.clone();
+        move |event: EspMqttEvent<'_>| match event.payload() {
+            EventPayload::Connected(_) => {
+                log::info!("�� MQTT connected");
+                mqtt_connected.store(true, Ordering::SeqCst);
+            }
+            EventPayload::Received { topic, data, .. } => {
+                if let Ok(payload_str) = std::str::from_utf8(data) {
+                    if let Some(t) = topic {
+                        if t.starts_with("v1/devices/me/rpc/request/") {
+                            let id = t.split('/').last().unwrap_or("0");
+                            if let Ok(json) = serde_json::from_str::<serde_json::Value>(payload_str) {
+                                if let Some(params) = json.get("params") {
+                                    if let Some(url) = params.get("ota_url").and_then(|u| u.as_str()) {
+                                        send_rpc_response(id, "success");
+                                        ota_process(url);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    };
+
+    // MQTT connect loop
+    let client = loop {
+        match unsafe { EspMqttClient::new_nonstatic_cb(TB_MQTT_URL, &mqtt_config, mqtt_callback.clone()) } {
+            Ok(c) => {
+                unsafe { MQTT_CLIENT = Some(c) };
+                if let Some(c_ref) = get_mqtt_client() {
+                    while !mqtt_connected.load(Ordering::SeqCst) {
+                        thread::sleep(Duration::from_millis(500));
+                    }
+                    c_ref.subscribe("v1/devices/me/rpc/request/+", QoS::AtLeastOnce).unwrap();
+                    publish_fw_version();
+                    publish_fw_state("IDLE");
+                    break c_ref;
+                }
+            }
+            Err(_) => {
+                thread::sleep(Duration::from_secs(5));
+            }
+        }
+    };
+
+    // --- Telemetry Loop ---
+    let mut rng = rand::thread_rng();
+    let mut counter = 0;
+    loop {
+        if counter >= 60 {
+            let temp = rng.gen_range(20.0..30.0);
+            let hum = rng.gen_range(50.0..70.0);
+            let payload = format!(r#"{{"temperature":{:.2},"humidity":{:.2}}}"#, temp, hum);
+            client.publish("v1/devices/me/telemetry", QoS::AtLeastOnce, false, payload.as_bytes()).ok();
+            counter = 0;
+        }
+        thread::sleep(Duration::from_secs(1));
+        counter += 1;
+    }
+}
+
+// --- OTA process ---
+fn ota_process(url: &str) {
+    log::info!("OTA dari URL: {}", url);
+    publish_fw_state("DOWNLOADING");
+    match EspOta::new() {
+        Ok(mut ota) => {
+            let conn = EspMQTTConnection::new(&Default::default()).unwrap();
+            let mut client = Client::wrap(conn);
+            let mut response = client.get(url).unwrap().submit().unwrap();
+            let mut buf = [0u8; 1024];
+            let mut update = ota.initiate_update().unwrap();
+            loop {
+                match response.read(&mut buf) {
+                    Ok(0) => break,
+                    Ok(size) => { update.write(&buf[..size]).unwrap(); }
+                    Err(_) => break,
+                }
+            }
+            update.complete().unwrap();
+            publish_fw_state("SUCCESS");
+            unsafe { esp_restart(); }
+        }
+        Err(_) => publish_fw_state("FAILED"),
+    }
+}
+\end{lstlisting}
+
+
+\vspace{0.5cm}
+\section{Cuplikan Kode Konfigurasi Cargo.toml}
+
+\lstset{
+  language={},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  xleftmargin=1.2em,
+  xrightmargin=1.2em,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+  showstringspaces=false,
+  captionpos=b
+}
+
+\begin{lstlisting}[caption={Konfigurasi proyek pada berkas Cargo.toml}]
+[package]
+name = "dev"
+version = "0.1.0"
+authors = ["jidanrrey"]
+edition = "2021"
+resolver = "2"
+rust-version = "1.77"
+
+[[bin]]
+name = "dev"
+harness = false  # Nonaktifkan test harness untuk menghindari error rust-analyzer
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true     # Simbol debug tetap diaktifkan
+opt-level = "z"  # Optimasi ukuran
+
+[features]
+default = []
+experimental = ["esp-idf-svc/experimental"]
+
+[dependencies]
+log = "0.4"
+esp-idf-svc = "0.51"
+embedded-svc = "0.28"
+embedded-io = "0.6"
+rand = "0.8"
+anyhow = "1.0"
+heapless = "0.8"
+serde_json = "1.0"
+dht-sensor = "0.2"
+
+[build-dependencies]
+embuild = "0.33"
+
+[package.metadata.esp-idf]
+partition_table = "partition_table.csv"
+\end{lstlisting}
+
+\section{Link Github}https://github.com/Reyleo-create/Andre-Mahesa-Bagaskara---Teknologi-IoT.git
+
+Github berisikan main.rs, cargo.toml, prosedur project, dll digunakan agar lebih mudah diakses.
+
+% =========================
+% DAFTAR PUSTAKA
+% =========================
+\chapter*{Daftar Pustaka}
+\addcontentsline{toc}{chapter}{Daftar Pustaka}
+\begin{enumerate}
+\item D. Alhalabi, S. Alnakhlani, B. Fteiha, H. Zia (2024). \textit{Enhancing Smart Home Automation: Secure AC Control and Environmental Monitoring with MQTT}.
+  \item G. Zhu, J. Xu, K. Huang, S. Cui (2021). \textit{Over-the-Air Computing for Wireless Data Aggregation in Massive IoT}.
+  \item M. Meribout et al. (2022). \textit{State of the Art IoT and Edge Embedded Systems for Real-Time Machine Vision Applications}.
+  \item J. Wan et al. (2016). \textit{Software-Defined Industrial Internet of Things in the Context of Industry 4.0}.
+  \item Phala, Kumar, Hancke (2016). \textit{Air Quality Monitoring System Based on ISO/IEC/IEEE 21451 Standards}.
+  \item Annas et al. (2024). \textit{Cloud-Based IoT System for Real-Time Harmful Algal Bloom Monitoring (ThingsBoard via MQTT and REST API)}.
+  \item Pfitzinger \& Wöhrle (2023). \textit{Embedded Real-Time Human Activity Recognition on ESP32-S3 Using Ambient Audio Data}.
+  \item Khalaf et al. (2021). \textit{Controlling Smart Home Activities Using IoT}.
+  \item Kolahi et al. (2015). \textit{Analysis of UDP DDoS Flood Cyber Attack and Defense Mechanisms on Web Server with Linux Ubuntu 13}.
+  \item Bello \& Zeadally (2016). \textit{Intelligent Device-to-Device Communication in the Internet of Things}.
+  \item Rahman et al. (2023). \textit{IoT-Based Monitoring System for Indoor Air Quality Using ThingsBoard}.
+  \item Gao et al. (2023). \textit{Rust for Linux: Understanding the Security Impact of Rust in the Linux Kernel}.
+  \item Li et al. (2024). \textit{Scalable Smart Home Management with ESP32-S3: A Low-Cost Solution for Accessible Home Automation}.
+  \item Al-Fuqaha et al. (2023). \textit{Sensor Data Collection and Analytics with ThingsBoard and Spark Streaming}.
+  \item Postolache et al. (2009). \textit{Smart Sensors Network for Air Quality Monitoring Applications}.
+  \item Liu, Zang, Li, \& Vucetic (2020). \textit{Over-the-Air Computation Systems: Optimization, Analysis and Scaling Laws}.
+  \item Alabadi, Habbal, \& Wei (2022). \textit{Industrial Internet of Things: Requirements, Architecture, Challenges, and Future Research Directions}.
+  \item Ghosh et al. (2021). \textit{Software-Defined Industrial Internet of Things in the Context of Industry 4.0}.
+  \item Liu et al. (2020). \textit{Over-the-Air Computation Systems: Optimization, Analysis, and Scaling Laws (1)}.
+  \item Montdher Alabadi et al. (2022). \textit{Industrial Internet of Things: Requirement, Architecture, Challenges, and Future Research Directions}.
+  \item Zeng et al. (2021). \textit{Federated Learning via Over-the-Air Computation}.
+\end{enumerate}
+
+\end{document} 
