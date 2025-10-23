@@ -192,11 +192,7 @@ espflash save-image --chip esp32s3 target/xtensa-esp32s3-espidf/release/dev dev.
 
 ---
 
-### 1️⃣1️⃣ Jalankan server HTTP lokal untuk OTA update
-
-```bash
-python3 -m http.server
-```
+### 1️⃣1️⃣ Jalankan server MQTT lokal untuk OTA update
 
 Cek alamat IP dengan:
 
@@ -281,7 +277,6 @@ cargo build --release
 nano partition_table.csv
 espflash flash --partition-table partition_table.csv target/xtensa-esp32s3-espidf/debug/dev --monitor --port /dev/ttyACM0
 espflash save-image --chip esp32s3 target/xtensa-esp32s3-espidf/release/dev dev.bin
-python3 -m http.server
 ifconfig
 ```
 ---
@@ -393,6 +388,7 @@ Kelas 5B Kelompok 12
 2. Andre Mahesa Bagaskara NRP 2042231012
 
 Kontak:
+📧 Email: 2042231009@student.its.ac.id
 📧 Email: 2042231012@student.its.ac.id
 
 ---
