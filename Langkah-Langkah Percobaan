@@ -140,11 +140,7 @@ espflash save-image --chip esp32s3 target/xtensa-esp32s3-espidf/release/dev dev.
 
 ---
 
-🌐 9️⃣ Jalankan server HTTP lokal untuk OTA
-
-```bash
-python3 -m http.server
-```
+🌐 9️⃣ Jalankan server MQTT lokal untuk OTA
 
 Lihat alamat IP lokal:
 
@@ -208,7 +204,6 @@ cargo build --release
 nano partition_table.csv
 espflash flash --partition-table partition_table.csv target/xtensa-esp32s3-espidf/debug/dev --monitor --port /dev/ttyACM0
 espflash save-image --chip esp32s3 target/xtensa-esp32s3-espidf/release/dev dev.bin
-python3 -m http.server
 ifconfig
 ```
 
