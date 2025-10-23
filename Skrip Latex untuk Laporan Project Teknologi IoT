@@ -508,6 +508,18 @@ Berikut dokumentasi hasil implementasi sistem RustHome, yang menampilkan proses 
   \caption{Plot Grafik Latency Analysis: Sensor RTC vs ThingsBoard.}
 \end{figure}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{Tampilan Log Terminal Waktu OTA Sukses 1.png}
+  \caption{Tampilan Log Terminal Waktu OTA Sukses 1}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.965\textwidth]{Tampilan Log Terminal Waktu OTA Sukses 2.png}
+  \caption{Tampilan Log Terminal Waktu OTA Sukses 2}
+\end{figure}
+
 \clearpage
 
 \section{Cuplikan Data Timestamp Temperature \& Humidity (telemetry.csv)}
